@@ -141,6 +141,7 @@
   const VOICES = {
     zach: { type: 'square', f: 540, vol: 0.045 },
     alex: { type: 'triangle', f: 780, vol: 0.09 },
+    alexm: { type: 'triangle', f: 560, vol: 0.07, filter: ['lowpass', 650] },
     dad: { type: 'square', f: 175, vol: 0.05, filter: ['lowpass', 1400] },
     beast: { type: 'sawtooth', f: 72, vol: 0.16, crush: true },
     gary: { type: 'triangle', f: 330, vol: 0.08 },
@@ -270,6 +271,27 @@
     },
     select() {
       tone({ type: 'square', f: 660, f2: 990, dur: 0.09, vol: 0.06 });
+    },
+    // Alex, shouting a warning from where she's hiding
+    shout() {
+      [0, 0.06, 0.12].forEach((d, i) => tone({ type: 'triangle', f: 900 + i * 140, f2: 1100 + i * 140, dur: 0.07, vol: 0.11, delay: d }));
+    },
+    crickets() {
+      for (let i = 0; i < 6; i++) {
+        const d = 0.3 + i * 0.55 + (i % 2) * 0.12;
+        for (let k = 0; k < 3; k++) tone({ type: 'sine', f: 4200 + (i % 3) * 180, dur: 0.035, vol: 0.035, delay: d + k * 0.05 });
+      }
+    },
+    powerOn() {
+      tone({ type: 'sine', f: 60, f2: 15000, dur: 0.5, vol: 0.03, slide: 0.45 });
+      noise({ f: 5000, ftype: 'highpass', dur: 0.25, vol: 0.08 });
+    },
+    sparkle() {
+      [1760, 2350, 2960].forEach((f, i) => tone({ type: 'triangle', f, dur: 0.08, vol: 0.05, delay: i * 0.04 }));
+    },
+    lock() {
+      tone({ type: 'square', f: 220, f2: 180, dur: 0.12, vol: 0.08 });
+      noise({ f: 2600, ftype: 'bandpass', q: 5, dur: 0.05, vol: 0.25, delay: 0.05 });
     },
   });
   A.tone = tone;

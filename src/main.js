@@ -7,34 +7,19 @@
   const sfx = A.sfx;
   const input = EC.input;
 
-  const QUOTES = [
-    'A man who cannot outrun a cardigan cannot run a household.',
-    'You are not good enough for my daughter.',
-    'Unreliable.',
-    'Gary would have made it.',
-    'Brandon got further than this.',
-    'That was my good recliner.',
-    'I cleared my Thursday for this.',
-  ];
-
   let mode = 'boot';
   let scene = null;
   let cs = null;
   let level = null;
   let tut = null;
-  let hintT = 0;
   let hudKey = '';
   let seenIntro = EC.store.get('seenIntro', false);
 
   function clearOverlays() {
     ui.dialog.hide();
-    ui.direction.hide();
-    ui.callout.hide();
     ui.bubble.hide();
     ui.tutorial.hide();
     ui.prompt.hide();
-    ui.room.hide();
-    ui.meter.set(null);
     ui.panel.hide();
   }
   function setSkip(label) {
@@ -44,13 +29,15 @@
   }
 
   // ---------------------------------------------------------------- title
-  function goTitle() {
+  function goTitle(powerOn) {
     mode = 'title';
     clearOverlays();
     A.stopMusic();
     ui.hud.show(false);
     ui.rec(false);
+    EC.fx.iris = null;
     scene = EC.scenes.newLiving();
+    if (powerOn) scene.power = 0;
     ui.prompt.show('PRESS START<small>' + (input.device === 'touch' ? 'Tap the screen' : 'Enter, Space or a tap') + '</small>', true);
     setSkip(seenIntro ? 'Skip intro ▸▸' : null);
   }
@@ -60,6 +47,9 @@
     mode = 'intro';
     clearOverlays();
     A.stopMusic();
+    EC.fx.iris = null;
+    ui.hud.show(false);
+    ui.rec(false);
     scene = EC.scenes.newLiving();
     cs = new EC.Cutscene(EC.scenes.intro, scene);
     setSkip('Skip ▸▸');
@@ -72,7 +62,6 @@
       return;
     }
     ui.dialog.hide();
-    ui.direction.hide();
     EC.fx.reset();
     cs = new EC.Cutscene(EC.scenes.titleOnly, scene);
     setSkip('Skip ▸▸');
@@ -89,7 +78,8 @@
     ui.hud.show(true);
     hudKey = '';
     input.setRunLatch(false);
-    ui.room.show(EC.LEVEL.ROOMS[0].name, EC.LEVEL.ROOMS[0].sub);
+    const f = level.focus();
+    EC.fx.irisTo(true, f.x, f.y, 0.9);
     tut = { step: 0, t: 0 };
     ui.tutorial.show('<p>Press ' + ui.glyph('A') + ' to apologize.</p>');
   }
@@ -108,24 +98,14 @@
       level.blowWall();
       A.music('chase');
       mode = 'play';
-      hintT = 5;
-      const hint =
-        input.device === 'touch'
-          ? 'B is on: Zach keeps running'
-          : 'Hold <kbd>X</kbd> to keep running · <kbd>→</kbd> go · <kbd>Space</kbd> jump · <kbd>↓</kbd> duck';
-      ui.prompt.show('<small>' + hint + '</small>', false, true);
     }
   }
 
   // ---------------------------------------------------------------- the chase
   function updatePlay(dt) {
     level.update(dt, 'play');
-    if (hintT > 0) {
-      hintT -= dt;
-      if (hintT <= 0) ui.prompt.hide();
-    }
     const h = level.hudState();
-    const key = [h.disks, h.key, h.gift, h.running, Math.floor(h.time)].join('|');
+    const key = [h.disks, h.key, h.gift, Math.floor(h.time)].join('|');
     if (key !== hudKey) {
       hudKey = key;
       ui.hud.set(h);
@@ -134,8 +114,14 @@
       pause();
       return;
     }
-    if (level.caught && level.caughtT > 1.3) showCaught();
-    else if (level.escaped) startEnding();
+    if (level.caught && level.caughtT > 1.4) showCaught();
+    else if (level.escaped) {
+      // close in on the front door, then out onto the lawn
+      mode = 'leaving';
+      const f = level.doorFocus();
+      A.stopMusic();
+      EC.fx.irisTo(false, f.x, f.y, 0.8, startEnding);
+    }
   }
 
   function pause() {
@@ -144,7 +130,6 @@
     A.duckMusic(true);
     ui.panel.show({
       title: 'PAUSED',
-      html: '<p class="quote">Gary is still waiting.</p>',
       buttons: [
         { label: 'Resume', onClick: resume },
         { label: 'Restart this room', onClick: retry },
@@ -163,11 +148,9 @@
   function showCaught() {
     mode = 'gameover';
     A.duckMusic(true);
-    const room = EC.LEVEL.ROOMS[level.room];
     ui.panel.show({
       title: 'NOT GOOD ENOUGH.',
       red: true,
-      html: '<p class="quote">“' + EC.pick(QUOTES) + '”</p><p>Caught in ' + room.name.toLowerCase().replace(/^the /, 'the ') + '. Times caught: ' + level.stats.deaths + '.</p>',
       buttons: [
         { label: 'Try again', onClick: retry },
         { label: 'Restart the level', onClick: () => startTutorial() },
@@ -181,6 +164,8 @@
     level.loadCheckpoint(level.checkpoint);
     hudKey = '';
     mode = 'play';
+    const f = level.focus();
+    EC.fx.irisTo(true, f.x, f.y, 0.6);
     A.music('chase');
     A.duckMusic(false);
     input.clear();
@@ -189,7 +174,7 @@
   // ---------------------------------------------------------------- the ending
   function startEnding() {
     mode = 'ending';
-    A.stopMusic();
+    EC.fx.iris = null;
     clearOverlays();
     ui.hud.show(false);
     ui.rec(false);
@@ -201,7 +186,6 @@
     mode = 'results';
     setSkip(null);
     ui.dialog.hide();
-    ui.direction.hide();
     A.music('ending');
     const s = level.stats;
     const best = EC.store.get('best', null);
@@ -215,13 +199,11 @@
       ['Hit by household objects', s.hits],
       ['Apologies', s.apologies + ' (accepted: 0)'],
       ['Eddie’s Couch backups', disks + '/' + total],
-      ['Theo’s gift', level.hasGift ? 'Delivered' : 'Still on the hall table'],
+      ['The gift', level.hasGift ? 'Delivered' : 'Left behind'],
     ];
     ui.panel.show({
       title: 'YOU ESCAPED THE HOUSE.',
-      html:
-        '<dl>' + rows.map((r) => '<dt>' + r[0] + '</dt><dd>' + r[1] + '</dd>').join('') + '</dl>' +
-        '<p class="quote">Next: Theo’s party. Coming as soon as Colby stops deleting things.</p>',
+      html: '<dl>' + rows.map((r) => '<dt>' + r[0] + '</dt><dd>' + r[1] + '</dd>').join('') + '</dl>',
       buttons: [
         { label: 'Play again', onClick: () => startTutorial() },
         { label: 'Watch the intro', onClick: startIntro },
@@ -256,6 +238,9 @@
       case 'play':
         updatePlay(dt);
         break;
+      case 'leaving':
+        level.update(dt, 'leaving');
+        break;
       case 'paused':
         if (input.pressed.pause) resume();
         break;
@@ -284,6 +269,7 @@
       g.fillStyle = '#000';
       g.fillRect(0, 0, EC.W, EC.H);
     }
+    EC.fx.drawIris(g);
   }
 
   // ---------------------------------------------------------------- the TV's buttons
@@ -347,7 +333,7 @@
       else level.loadCheckpoint(data.cp);
       mode = 'play';
       A.music('chase');
-    } else goTitle();
+    } else goTitle(true);
     EC.start(update, render);
   }
 
@@ -358,6 +344,9 @@
     },
     get level() {
       return level;
+    },
+    get scene() {
+      return scene;
     },
   };
 
@@ -371,7 +360,7 @@
     }));
   }
   function start(data) {
-    const fonts = ['400 20px "Bungee"', '700 16px "Pixelify Sans"', '400 16px "Pixelify Sans"', 'italic 400 16px "Courier Prime"'];
+    const fonts = ['400 20px "Bungee"', '700 16px "Pixelify Sans"', '400 16px "Pixelify Sans"'];
     const ready = document.fonts && document.fonts.load ? Promise.all(fonts.map((f) => document.fonts.load(f).catch(() => null))) : Promise.resolve();
     let started = false;
     const go = () => {

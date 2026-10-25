@@ -279,6 +279,7 @@
     flashT: 0,
     flashMax: 1,
     flashColor: '#fff',
+    iris: null,
     shake(amount, time) {
       this.shakeAmt = Math.max(this.shakeAmt, amount * (EC.reducedMotion ? 0.2 : 1));
       this.shakeT = Math.max(this.shakeT, time);
@@ -287,10 +288,27 @@
       this.flashColor = color;
       this.flashT = this.flashMax = time;
     },
+    // A circular wipe: opens out from (cx, cy), or closes in on it.
+    irisTo(open, cx, cy, dur, done) {
+      const full = Math.hypot(EC.W, EC.H);
+      const cur = this.iris ? this.iris.r : open ? 0 : full;
+      this.iris = { cx, cy, from: cur, to: open ? full : 0, r: cur, t: 0, dur: dur || 0.8, done, open };
+    },
     update(dt) {
       this.shakeT = Math.max(0, this.shakeT - dt);
       if (!this.shakeT) this.shakeAmt = 0;
       this.flashT = Math.max(0, this.flashT - dt);
+      const ir = this.iris;
+      if (ir && ir.t < ir.dur) {
+        ir.t = Math.min(ir.dur, ir.t + dt);
+        ir.r = EC.lerp(ir.from, ir.to, EC.ease.inOut(ir.t / ir.dur));
+        if (ir.t >= ir.dur) {
+          const cb = ir.done;
+          ir.done = null;
+          if (ir.open) this.iris = null;
+          if (cb) cb();
+        }
+      }
     },
     offset() {
       if (!this.shakeT) return [0, 0];
@@ -303,6 +321,17 @@
       g.fillStyle = this.flashColor;
       g.fillRect(0, 0, EC.W, EC.H);
       g.globalAlpha = 1;
+    },
+    drawIris(g) {
+      const ir = this.iris;
+      if (!ir) return;
+      g.save();
+      g.beginPath();
+      g.rect(-2, -2, EC.W + 4, EC.H + 4);
+      g.arc(ir.cx, ir.cy, Math.max(0, ir.r), 0, Math.PI * 2, true);
+      g.fillStyle = '#000';
+      g.fill('evenodd');
+      g.restore();
     },
     reset() {
       this.shakeT = this.shakeAmt = this.flashT = 0;
@@ -390,16 +419,15 @@
   function esc(s) {
     return s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   }
-  // Markup: (parentheticals) render as stage directions, _words_ as emphasis.
+  // Markup: _words_ render as emphasis.
   function parse(text) {
     const segs = [];
-    const re = /(\([^)]*\))|_([^_]+)_/g;
+    const re = /_([^_]+)_/g;
     let last = 0;
     let m;
     while ((m = re.exec(text))) {
       if (m.index > last) segs.push({ tag: '', s: text.slice(last, m.index) });
-      if (m[1]) segs.push({ tag: 'em', s: m[1] });
-      else segs.push({ tag: 'i', s: m[2] });
+      segs.push({ tag: 'i', s: m[1] });
       last = re.lastIndex;
     }
     if (last < text.length) segs.push({ tag: '', s: text.slice(last) });
@@ -409,6 +437,7 @@
     return segs.map((s) => s.s).join('');
   }
 
+  // Dialogue typewriter. It lingers on punctuation so lines land like they're spoken.
   class Typer {
     constructor(el, opts) {
       this.el = el;
@@ -417,8 +446,10 @@
       this.active = false;
       this.done = true;
       this.segs = [];
+      this.text = '';
       this.len = 0;
       this.shown = 0;
+      this.hold = 0;
       this.voice = null;
       this.speed = 50;
       this.blipAcc = 0;
@@ -426,17 +457,19 @@
     show(text, o) {
       o = o || {};
       this.segs = parse(text);
-      this.len = plain(this.segs).length;
+      this.text = plain(this.segs);
+      this.len = this.text.length;
       this.shown = 0;
+      this.hold = 0;
       this.done = false;
       this.active = true;
       this.voice = o.voice || null;
-      this.speed = o.speed || (o.loud ? 26 : 52);
+      this.speed = o.speed || (o.loud ? 24 : 50);
       this.blipAcc = 0;
       if (this.extra.setup) this.extra.setup(this, o);
       this.el.hidden = false;
       this.render();
-      ui.announce((o.label ? o.label + ': ' : '') + plain(this.segs));
+      ui.announce((o.label ? o.label + ': ' : '') + this.text);
     }
     render() {
       let left = Math.floor(this.shown);
@@ -458,24 +491,45 @@
     }
     update(dt) {
       if (!this.active || this.done) return;
+      if (this.hold > 0) {
+        this.hold -= dt;
+        return;
+      }
       const before = Math.floor(this.shown);
       this.shown = Math.min(this.len, this.shown + this.speed * dt);
-      const after = Math.floor(this.shown);
-      if (after !== before) {
-        this.blipAcc += after - before;
-        if (this.voice && this.blipAcc >= 2) {
-          this.blipAcc = 0;
-          EC.audio.sfx.blip(this.voice);
+      let after = Math.floor(this.shown);
+      if (after === before) return;
+      // stop at the first pause-worthy character we crossed
+      for (let i = before; i < after; i++) {
+        const ch = this.text[i];
+        const next = this.text[i + 1];
+        let pause = 0;
+        if (ch === '.' && next === '.') pause = 0;
+        else if (ch === '.' || ch === '?' || ch === '!') pause = next === ' ' ? 0.28 : 0;
+        else if (ch === '—') pause = 0.22;
+        else if (ch === ',') pause = 0.12;
+        if (ch === '.' && this.text[i - 1] === '.' && next !== '.') pause = 0.35;
+        if (pause && i + 1 < this.len) {
+          after = i + 1;
+          this.shown = after;
+          this.hold = pause;
+          break;
         }
-        if (after >= this.len) this.done = true;
-        this.render();
       }
+      this.blipAcc += after - before;
+      if (this.voice && this.blipAcc >= 2) {
+        this.blipAcc = 0;
+        EC.audio.sfx.blip(this.voice);
+      }
+      if (after >= this.len) this.done = true;
+      this.render();
     }
     // Returns true when the line was already complete (caller may move on).
     confirm() {
       if (!this.active) return true;
       if (!this.done) {
         this.shown = this.len;
+        this.hold = 0;
         this.done = true;
         this.render();
         return false;
@@ -486,136 +540,84 @@
       this.active = false;
       this.done = true;
       this.el.hidden = true;
-      this.el.classList.remove('loud');
+      this.el.classList.remove('loud', 'muffled');
     }
   }
 
   const dialogEl = $('dialog');
+  const portraitEl = dialogEl.querySelector('.portrait');
   ui.dialog = new Typer(dialogEl, {
     setup(t, o) {
       dialogEl.dataset.who = o.who || '';
       dialogEl.querySelector('.who').textContent = o.label || '';
       dialogEl.querySelector('.who').hidden = !o.label;
       dialogEl.classList.toggle('loud', !!o.loud);
-    },
-  });
-  const directionEl = $('direction');
-  ui.direction = new Typer(directionEl, {
-    setup(t, o) {
-      const slug = directionEl.querySelector('.slug');
-      slug.textContent = o.slug || '';
-      slug.hidden = !o.slug;
-      directionEl.style.top = o.bottom ? 'auto' : '';
-      directionEl.style.bottom = o.bottom ? '5%' : '';
-    },
-  });
-
-  const calloutEl = $('callout');
-  ui.callout = {
-    t: 0,
-    show(text, dur, who) {
-      calloutEl.querySelector('b').textContent = who || 'ALEX';
-      calloutEl.querySelector('span').innerHTML = parse(text)
-        .map((s) => (s.tag ? '<' + s.tag + '>' + esc(s.s) + '</' + s.tag + '>' : esc(s.s)))
-        .join('');
-      calloutEl.hidden = false;
-      calloutEl.classList.remove('pop');
-      void calloutEl.offsetWidth;
-      calloutEl.classList.add('pop');
-      this.t = dur || 3.2;
-      ui.announce((who || 'Alex') + ': ' + text);
-    },
-    update(dt) {
-      if (this.t > 0) {
-        this.t -= dt;
-        if (this.t <= 0) calloutEl.hidden = true;
+      dialogEl.classList.toggle('muffled', !!o.muffled);
+      const p = o.portrait;
+      portraitEl.hidden = !p;
+      if (p) {
+        portraitEl.width = p.w * 4;
+        portraitEl.height = p.h * 4;
+        const pg = portraitEl.getContext('2d');
+        pg.imageSmoothingEnabled = false;
+        pg.clearRect(0, 0, portraitEl.width, portraitEl.height);
+        pg.drawImage(p.img, p.x, p.y, p.w, p.h, 0, 0, p.w * 4, p.h * 4);
       }
     },
-    hide() {
-      this.t = 0;
-      calloutEl.hidden = true;
-    },
-  };
+  });
 
-  const roomEl = $('roomcard');
-  ui.room = {
-    t: 0,
-    show(name, sub) {
-      roomEl.querySelector('b').textContent = name;
-      roomEl.querySelector('span').textContent = sub;
-      roomEl.hidden = false;
-      this.t = 3.4;
-    },
-    update(dt) {
-      if (this.t > 0) {
-        this.t -= dt;
-        roomEl.style.opacity = Math.min(1, this.t / 0.5);
-        if (this.t <= 0) roomEl.hidden = true;
-      }
-    },
-    hide() {
-      this.t = 0;
-      roomEl.hidden = true;
-    },
-  };
-
-  const bubbles = { zach: $('bubble-zach'), beast: $('bubble-beast') };
+  const bubbleEl = $('bubble-zach');
   ui.bubble = {
-    t: { zach: 0, beast: 0 },
-    say(who, text, dur) {
-      bubbles[who].textContent = text;
-      bubbles[who].hidden = false;
-      this.t[who] = dur || 1.4;
+    t: 0,
+    say(text, dur) {
+      bubbleEl.textContent = text;
+      bubbleEl.hidden = false;
+      bubbleEl.classList.remove('pop');
+      void bubbleEl.offsetWidth;
+      bubbleEl.classList.add('pop');
+      this.t = dur || 0.9;
     },
     // x, y in internal screen pixels (480x270)
-    place(who, x, y) {
-      const el = bubbles[who];
-      if (el.hidden) return;
-      el.style.visibility = x < -10 || x > EC.W + 10 ? 'hidden' : '';
-      el.style.left = EC.clamp((x / EC.W) * 100, 8, 92) + '%';
-      el.style.top = EC.clamp((y / EC.H) * 100, 14, 96) + '%';
+    place(x, y) {
+      if (bubbleEl.hidden) return;
+      bubbleEl.style.left = EC.clamp((x / EC.W) * 100, 8, 92) + '%';
+      bubbleEl.style.top = EC.clamp((y / EC.H) * 100, 14, 96) + '%';
     },
     update(dt) {
-      for (const k in this.t) {
-        if (this.t[k] > 0) {
-          this.t[k] -= dt;
-          if (this.t[k] <= 0) bubbles[k].hidden = true;
-        }
+      if (this.t > 0) {
+        this.t -= dt;
+        if (this.t <= 0) bubbleEl.hidden = true;
       }
     },
     hide() {
-      for (const k in bubbles) {
-        bubbles[k].hidden = true;
-        this.t[k] = 0;
-      }
+      bubbleEl.hidden = true;
+      this.t = 0;
     },
   };
 
   const hudEl = $('hud');
+  let hudPrev = null;
+  function pulse(el) {
+    el.classList.remove('pulse');
+    void el.offsetWidth;
+    el.classList.add('pulse');
+  }
   ui.hud = {
     show(on) {
       hudEl.hidden = !on;
+      if (!on) hudPrev = null;
     },
     set(s) {
       $('hud-disks').textContent = s.disks + '/' + s.disksTotal;
       $('hud-key').classList.toggle('off', !s.key);
       $('hud-gift').classList.toggle('off', !s.gift);
-      const run = $('hud-run');
-      run.textContent = s.running ? 'RUN' : 'WALK';
-      run.classList.toggle('idle', !s.running);
       $('hud-time').textContent = EC.fmtTime(s.time);
-    },
-  };
-
-  const meterEl = $('meter');
-  ui.meter = {
-    set(text) {
-      if (text == null) {
-        meterEl.hidden = true;
-        return;
+      if (hudPrev) {
+        if (s.disks > hudPrev.disks) pulse($('hud-disks').parentNode);
+        if (s.key && !hudPrev.key) pulse($('hud-key'));
+        if (s.gift && !hudPrev.gift) pulse($('hud-gift'));
       }
-      meterEl.hidden = false;
-      meterEl.textContent = text;
+      hudPrev = { disks: s.disks, key: s.key, gift: s.gift };
     },
   };
 
@@ -632,11 +634,10 @@
 
   const promptEl = $('prompt');
   ui.prompt = {
-    show(html, blink, hint) {
+    show(html, blink) {
       promptEl.innerHTML = html;
       promptEl.hidden = false;
       promptEl.classList.toggle('blink', !!blink);
-      promptEl.classList.toggle('hint', !!hint);
     },
     hide() {
       promptEl.hidden = true;
@@ -651,7 +652,9 @@
       const h = panelEl.querySelector('h2');
       h.textContent = o.title;
       h.classList.toggle('red', !!o.red);
-      panelEl.querySelector('.body').innerHTML = o.html || '';
+      const body = panelEl.querySelector('.body');
+      body.innerHTML = o.html || '';
+      body.hidden = !o.html;
       const actions = panelEl.querySelector('.actions');
       actions.innerHTML = '';
       this.primary = null;

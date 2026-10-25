@@ -1,4 +1,4 @@
-/* Eddie's Couch 2 — the cutscene runner and the scripted scenes (intro, title card, ending). */
+/* Eddie's Couch 2 — the cutscene runner and the scripted scenes (intro, title card, ending). The story is acted, not narrated. */
 (function () {
   'use strict';
   const EC = window.EC;
@@ -12,9 +12,8 @@
   EC.FONT = {
     display: '"Bungee", "Arial Black", Impact, sans-serif',
     ui: '"Pixelify Sans", "Trebuchet MS", Verdana, sans-serif',
-    script: '"Courier Prime", "Courier New", Courier, monospace',
   };
-  const NAMES = { zach: 'ZACH', alex: 'ALEX', dad: 'DAD', beast: "GIRLFRIEND'S DAD BEAST", gary: 'GARY', phone: 'UNKNOWN NUMBER' };
+  const NAMES = { zach: 'ZACH', alex: 'ALEX', dad: 'DAD', beast: "GIRLFRIEND'S DAD BEAST", phone: 'UNKNOWN NUMBER' };
 
   // ================================================================ runner
   // A script is a generator. It yields a number (seconds), 'line' (wait for the reader), or a function (wait until true).
@@ -37,6 +36,7 @@
     tween(obj, to, dur, ease) {
       const from = {};
       Object.keys(to).forEach((k) => (from[k] = obj[k]));
+      this.tweens = this.tweens.filter((tw) => tw.obj !== obj || !Object.keys(to).some((k) => k in tw.to));
       this.tweens.push({ obj, from, to, dur: Math.max(0.0001, dur), t: 0, ease: ease || EC.ease.inOut });
     }
     update(dt) {
@@ -48,7 +48,6 @@
         return tw.t < tw.dur;
       });
       ui.dialog.update(dt);
-      ui.direction.update(dt);
       const confirm = EC.input.pressed.confirm;
       let used = false;
       if (confirm && this.typer && this.typer.active && !this.typer.done) {
@@ -76,30 +75,76 @@
   }
   EC.Cutscene = Cutscene;
 
+  // ================================================================ speaker portraits
+  function poseOf(a, fallback) {
+    if (!a || a.to != null || !a.pose) return fallback;
+    return a.pose;
+  }
+  function portrait(who, S) {
+    if (who === 'zach') {
+      const spr = art.zach(poseOf(S.zach, 'grin'), 0);
+      return { img: spr.img, x: 6, y: 3, w: 16, h: 16 };
+    }
+    if (who === 'alex') {
+      const p = poseOf(S.alex, 'smile');
+      if (p === 'kneel') return { img: art.alex('kneel').img, x: 4, y: 6, w: 16, h: 16 };
+      return { img: art.alex(p, 0).img, x: 4, y: 4, w: 16, h: 16 };
+    }
+    if (who === 'dad' && S.dad) {
+      const d = S.dad;
+      if (d.mode === 'seat') return { img: art.dadSeated({ remote: d.remote, glasses: d.glasses, eyes: d.eyes }).img, x: 23, y: 1, w: 18, h: 18 };
+      return { img: art.dadStand({ pose: d.pose, buttons: d.buttons, glasses: d.glasses, eyes: d.eyes, stache: d.stache }).img, x: 11, y: 0, w: 18, h: 18 };
+    }
+    if (who === 'beast') return { img: art.beastFront({ roar: true }).img, x: 22, y: 0, w: 40, h: 40 };
+    if (who === 'phone') return { img: art.prop('phone').img, x: 0, y: 0, w: 7, h: 10 };
+    return null;
+  }
+
   function showSay(cs, who, text, o) {
     o = o || {};
-    shot(cs.scene, o.cam || SHOT_FOR[who] || 'wide');
-    ui.direction.hide();
-    ui.dialog.show(text, { who, label: o.label || NAMES[who], voice: who, loud: o.loud });
+    if (o.cam !== 'keep') shot(cs.scene, o.cam || SHOT_FOR[who] || 'wide');
+    ui.dialog.show(text, {
+      who,
+      label: o.label || NAMES[who],
+      voice: o.voice || who,
+      loud: o.loud,
+      muffled: o.muffled,
+      speed: o.speed,
+      portrait: portrait(who, cs.scene),
+    });
     cs.typer = ui.dialog;
-  }
-  function showNarr(cs, text, slug, cam) {
-    if (cam !== 'keep') shot(cs.scene, cam || 'wide');
-    ui.dialog.hide();
-    ui.direction.show(text, { slug, voice: 'script' });
-    cs.typer = ui.direction;
   }
   function* say(cs, who, text, o) {
     showSay(cs, who, text, o);
     yield 'line';
-  }
-  function* narr(cs, text, slug, cam) {
-    showNarr(cs, text, slug, cam);
-    yield 'line';
-  }
-  function clearText() {
     ui.dialog.hide();
-    ui.direction.hide();
+  }
+
+  // ================================================================ cameras
+  const SHOT_FOR = { dad: 'dad', zach: 'two', alex: 'two', beast: 'beast' };
+  function shotTarget(S, name) {
+    const d = S.dad;
+    const c = { x: EC.W / 2, y: EC.H / 2, z: 1 };
+    if (name === 'dad') Object.assign(c, { x: d.x + 22, y: FY - 32, z: 2 });
+    else if (name === 'two') Object.assign(c, { x: (S.zach.x + S.alex.x) / 2 - 6, y: FY - 32, z: 2 });
+    else if (name === 'beast') Object.assign(c, { x: d.x + 34, y: FY - 64, z: 1.5 });
+    else if (name === 'clock') Object.assign(c, { x: 50, y: 124, z: 2.5 });
+    else if (name === 'table') Object.assign(c, { x: 150, y: 166, z: 3 });
+    const hw = EC.W / 2 / c.z;
+    const hh = EC.H / 2 / c.z;
+    c.x = EC.clamp(c.x, hw, EC.W - hw);
+    c.y = EC.clamp(c.y, hh, EC.H - hh);
+    return c;
+  }
+  // A film cut.
+  function shot(S, name) {
+    if (!S.cam || S.view !== 'living') return;
+    Object.assign(S.cam, shotTarget(S, name));
+  }
+  // A slow camera move.
+  function pan(cs, name, dur) {
+    const S = cs.scene;
+    cs.tween(S.cam, shotTarget(S, name), dur, EC.ease.inOut);
   }
 
   // ================================================================ the living room
@@ -142,16 +187,17 @@
     return {
       view: 'living',
       t: 0,
-      clock: { run: true, t: 0, last: 0, ang: 0 },
+      clock: { run: true, t: 0, last: 0, ang: 0, min: 0.6, hour: 2.4, fast: 0 },
       door: 0,
       zach: { x: 452, face: -1, pose: 'grin', frame: 0, visible: false, to: null, speed: 70, hat: true, tilt: 0, arrived: false, dist: 0 },
       alex: { x: 470, face: -1, pose: 'smile', frame: 0, visible: false, to: null, speed: 70, hat: true, tilt: 0, arrived: false, dist: 0 },
       dad: { mode: 'seat', x: 182, remote: true, glasses: true, eyes: 'calm', pose: 'down', buttons: 4, sy: 1, grow: 0, stache: false, stomp: false, roar: false },
       horn: 0,
-      remoteOnTable: false,
-      glassesOnTable: false,
-      glassesPat: 0,
+      remote: null,
+      glassesItem: null,
       dim: 0,
+      lamp: 1,
+      lightning: 0,
       recliner: 'ok',
       smoke: 0,
       gary: 0,
@@ -160,25 +206,10 @@
       black: 0,
       blinkT: 0,
       title: null,
+      power: null,
       cam: { x: EC.W / 2, y: EC.H / 2, z: 1 },
     };
   }
-
-  // Film-style cuts between a wide shot and close-ups.
-  function shot(S, name) {
-    if (!S.cam || S.view !== 'living') return;
-    const d = S.dad;
-    const c = S.cam;
-    if (name === 'wide') Object.assign(c, { x: EC.W / 2, y: EC.H / 2, z: 1 });
-    else if (name === 'dad') Object.assign(c, { x: d.x + 22, y: FY - 32, z: 2 });
-    else if (name === 'two') Object.assign(c, { x: (S.zach.x + S.alex.x) / 2 - 6, y: FY - 32, z: 2 });
-    else if (name === 'beast') Object.assign(c, { x: d.x + 34, y: FY - 64, z: 1.5 });
-    const hw = EC.W / 2 / c.z;
-    const hh = EC.H / 2 / c.z;
-    c.x = EC.clamp(c.x, hw, EC.W - hw);
-    c.y = EC.clamp(c.y, hh, EC.H - hh);
-  }
-  const SHOT_FOR = { dad: 'dad', zach: 'two', alex: 'two', beast: 'beast' };
 
   function walkTo(a, x, speed) {
     a.to = x;
@@ -205,15 +236,28 @@
     S.t += dt;
     stepActor(S.zach, dt);
     stepActor(S.alex, dt);
-    if (S.clock.run) {
-      S.clock.t += dt;
-      S.clock.ang = Math.sin(S.clock.t * Math.PI * 1.6) * 0.32;
-      const beat = Math.floor(S.clock.t * 1.6);
-      if (beat !== S.clock.last) {
-        S.clock.last = beat;
+    const ck = S.clock;
+    if (ck.fast) {
+      // time-lapse: the hands race, Dad does not move
+      ck.t += dt;
+      ck.min += dt * 26;
+      ck.hour += (dt * 26) / 12;
+      ck.ang = Math.sin(ck.t * Math.PI * 9) * 0.34;
+      const beat = Math.floor(ck.t * 9);
+      if (beat !== ck.last) {
+        ck.last = beat;
         sfx.tick(beat & 1);
       }
-    } else S.clock.ang *= Math.pow(0.02, dt);
+    } else if (ck.run) {
+      ck.t += dt;
+      ck.min += dt * 0.004;
+      ck.ang = Math.sin(ck.t * Math.PI * 1.6) * 0.32;
+      const beat = Math.floor(ck.t * 1.6);
+      if (beat !== ck.last) {
+        ck.last = beat;
+        sfx.tick(beat & 1);
+      }
+    } else ck.ang *= Math.pow(0.03, dt);
     if (S.hatFly) {
       const h = S.hatFly;
       h.vy += 520 * dt;
@@ -222,9 +266,8 @@
       h.rot += h.vr * dt;
       if (h.y > 320) S.hatFly = null;
     }
-    if (S.smoke > 0) {
-      S.smoke -= dt;
-    }
+    if (S.smoke > 0) S.smoke -= dt;
+    if (S.lightning > 0) S.lightning -= dt;
     S.parts.update(dt);
     // He blinks, rarely.
     if (S.dad.mode === 'seat' && S.view === 'living') {
@@ -275,24 +318,46 @@
     }
   }
 
+  function drawClockHands(g, S) {
+    const cx = 43;
+    const cy = FY - 118 + 22;
+    const hand = (ang, len) => {
+      g.save();
+      g.translate(cx, cy);
+      g.rotate(ang);
+      g.fillStyle = C.ink;
+      g.fillRect(-0.5, -len, 1.2, len);
+      g.restore();
+    };
+    hand(S.clock.hour, 4);
+    hand(S.clock.min, 6.5);
+    R(g, cx - 1, cy - 1, 2, 2, C.brassS);
+  }
+
+  // Gary, at church, feels it.
   function drawGary(g, S) {
     if (S.gary <= 0) return;
     g.save();
     g.globalAlpha = Math.min(1, S.gary);
     const x = 318;
-    const y = 112;
+    const y = 104;
     const w = 150;
-    const h = 84;
+    const h = 92;
     R(g, x - 2, y - 2, w + 4, h + 4, C.ink);
     R(g, x, y, w, h, '#4a3a5a');
+    // stained glass
+    R(g, x + 14, y + 6, 46, 44, '#2a2033');
     const glassC = ['#c8434a', '#3d6fc4', '#e2b84a', '#5f8a5a'];
-    for (let i = 0; i < 8; i++) R(g, x + 14 + (i % 4) * 9, y + 18 + Math.floor(i / 4) * 12, 8, 11, glassC[i % 4]);
-    R(g, x, y, w, 13, C.ink);
-    R(g, x, y + 58, w, 26, '#5a3419');
-    R(g, x, y + 56, w, 3, '#7a4a2a');
+    for (let i = 0; i < 12; i++) R(g, x + 16 + (i % 4) * 11, y + 8 + Math.floor(i / 4) * 14, 9, 12, glassC[(i + Math.floor(i / 4)) % 4]);
+    R(g, x + 14, y + 4, 46, 3, '#2a2033');
+    art.glow(g, x + 37, y + 28, 40, 'rgba(255,220,160,0.25)');
+    // the pew
+    R(g, x, y + 62, w, 30, '#5a3419');
+    R(g, x, y + 60, w, 3, '#7a4a2a');
+    R(g, x, y + 74, w, 2, '#3e2312');
     // Gary
     const gx = x + 104;
-    const gy = y + 58;
+    const gy = y + 62;
     R(g, gx - 9, gy - 22, 18, 22, '#3a5a8a');
     R(g, gx - 6, gy - 22, 12, 22, '#c9a26e');
     R(g, gx - 6, gy - 36, 12, 14, C.skin);
@@ -300,7 +365,8 @@
     R(g, gx + 4, gy - 33, 2, 6, C.dHairS);
     R(g, gx - 4, gy - 31, 3, 2, C.glass);
     R(g, gx + 1, gy - 31, 3, 2, C.glass);
-    R(g, gx - 2, gy - 26, 4, 1, C.skinD);
+    const worried = S.gary > 0.5 && Math.floor(S.t * 3) % 2;
+    R(g, gx - 2, gy - 26, 4, worried ? 2 : 1, worried ? C.mouth : C.skinD);
     // the cup, rippling
     R(g, gx + 9, gy - 16, 9, 11, '#f4f1ea');
     R(g, gx + 6, gy - 13, 4, 3, C.skin);
@@ -314,11 +380,6 @@
       g.stroke();
     }
     R(g, gx + 10, gy - 16, 7, 1, '#6b3a1c');
-    g.font = '700 9px ' + EC.FONT.ui;
-    g.textAlign = 'center';
-    g.textBaseline = 'middle';
-    g.fillStyle = '#f4e7c9';
-    g.fillText('MEANWHILE, AT CHURCH', x + w / 2, y + 7);
     g.restore();
   }
 
@@ -330,21 +391,25 @@
     g.scale(cam.z, cam.z);
     g.translate(-cam.x, -cam.y);
     g.drawImage(livingBg, 0, 0);
-    // pendulum
-    const px = 43;
-    const py = 128;
+    // lightning through the window
+    if (S.lightning > 0) {
+      g.globalAlpha = Math.min(1, S.lightning * 4) * (EC.reducedMotion ? 0.4 : 0.9);
+      R(g, 290, 62, 54, 66, '#eef3ff');
+      g.globalAlpha = 1;
+    }
+    // pendulum and hands
     g.save();
-    g.translate(px, py);
+    g.translate(43, 128);
     g.rotate(S.clock.ang);
     R(g, -1, 0, 2, 36, C.brassS);
     art.disc(g, 0, 38, 4, C.brass);
     g.restore();
-    paint.clockHands(g, 30, FY, 118);
+    drawClockHands(g, S);
     // lamp glow
-    art.glow(g, 124, 164, 46, 'rgba(255,214,140,0.35)');
+    if (S.lamp > 0) art.glow(g, 124, 164, 46, 'rgba(255,214,140,0.35)', S.lamp);
     drawDoor(g, S.door);
-    if (S.remoteOnTable) art.put(g, art.prop('remoteFlat'), 140, 176);
-    if (S.glassesOnTable) art.put(g, art.prop('glasses'), 130, 176 - (S.glassesPat > 0 ? 1 : 0));
+    if (S.remote) art.put(g, art.prop('remoteFlat'), S.remote.x, S.remote.y);
+    if (S.glassesItem) art.put(g, art.prop('glasses'), S.glassesItem.x, S.glassesItem.y);
     // recliner / dad / beast
     const d = S.dad;
     if (d.mode === 'seat') art.put(g, art.dadSeated({ remote: d.remote, glasses: d.glasses, eyes: d.eyes }), d.x, FY);
@@ -523,35 +588,55 @@
       door: 1,
       porch: 1,
       beast: 0,
+      beastLook: '',
       zach: { x: 216, y: 196, face: 1, pose: 'hurt', rot: 0, visible: true, gift: false },
       phone: 0,
       black: 1,
       parts: new EC.Particles(),
     };
   }
-  function drawLawn(g, S) {
+  // E is the lawn's state: the ending scene itself, or the intro's establishing shot.
+  function drawLawn(g, E) {
     if (!lawnBg) buildLawn();
+    const cam = E.cam;
+    g.save();
+    if (cam) {
+      g.translate(EC.W / 2, EC.H / 2);
+      g.scale(cam.z, cam.z);
+      g.translate(-cam.x, -cam.y);
+    }
     g.drawImage(lawnBg, 0, 0);
+    if (E.dusk) {
+      // early evening: the last of the sunset over the roof
+      const sky = g.createLinearGradient(0, 0, 0, 214);
+      sky.addColorStop(0, 'rgba(120,70,140,0.35)');
+      sky.addColorStop(0.7, 'rgba(240,130,90,0.38)');
+      sky.addColorStop(1, 'rgba(255,170,110,0.2)');
+      g.fillStyle = sky;
+      g.fillRect(0, 0, EC.W, 214);
+    }
     // doorway
     const dx = 200;
     const dy = 120;
     const dw = 32;
     const dh = 76;
-    if (S.door > 0.05) {
+    if (E.door > 0.05) {
       R(g, dx, dy, dw, dh, '#f2c46a');
       R(g, dx, dy + dh - 6, dw, 6, '#c99a4a');
-      if (S.beast > 0) {
+      if (E.beast > 0) {
         // He has to stoop to look out. His fists grip the frame.
         const bx = dx + dw / 2;
-        const feet = dy + dh + 36 + (1 - S.beast) * 50;
+        const feet = dy + dh + 36 + (1 - E.beast) * 50;
+        const lookY = E.beastLook === 'down' ? 2 : 0;
+        const lookX = E.beastLook === 'side' ? -2 : 0;
         g.save();
         g.beginPath();
         g.rect(dx, dy, dw, dh);
         g.clip();
-        art.put(g, art.beastFront({ roar: S.beastRoar }), bx, feet);
-        art.beastFrontEyes.forEach(([ex, ey]) => art.glow(g, bx + ex, feet + ey, 8, 'rgba(255,43,43,0.9)', 0.9));
+        art.put(g, art.beastFront({ roar: E.beastRoar, look: E.beastLook }), bx, feet);
+        art.beastFrontEyes.forEach(([ex, ey]) => art.glow(g, bx + ex + lookX, feet + ey + lookY, 8, 'rgba(255,43,43,0.9)', 0.9));
         g.restore();
-        if (S.beast > 0.6) {
+        if (E.beast > 0.6) {
           [[dx - 7, dy + 26], [dx + dw - 3, dy + 30]].forEach(([fx, fy]) => {
             R(g, fx - 1, fy - 1, 12, 14, C.ink);
             R(g, fx, fy, 10, 12, C.bSkin);
@@ -560,30 +645,31 @@
           });
         }
       }
-      R(g, dx, dy, Math.max(2, Math.round(dw * (1 - S.door))), dh, C.woodS);
+      R(g, dx, dy, Math.max(2, Math.round(dw * (1 - E.door))), dh, C.woodS);
     } else {
       R(g, dx, dy, dw, dh, C.wood);
       R(g, dx + 4, dy + 6, dw - 8, 20, C.woodS);
-      R(g, dx + 6, dy + 8, dw - 12, 16, S.porch > 0.5 ? '#e7c46a' : '#7a6a3a');
+      R(g, dx + 6, dy + 8, dw - 12, 16, E.porch > 0.5 ? '#e7c46a' : '#7a6a3a');
       R(g, dx + 4, dy + 34, dw - 8, dh - 40, C.woodS);
       R(g, dx + 5, dy + 35, dw - 10, dh - 42, C.wood);
       R(g, dx + dw - 7, dy + 40, 3, 4, C.brass);
     }
     // porch light
-    R(g, 244, 128, 8, 10, S.porch > 0.5 ? '#fff2b0' : '#5a5040');
+    R(g, 244, 128, 8, 10, E.porch > 0.5 ? '#fff2b0' : '#5a5040');
     R(g, 243, 126, 10, 2, '#2a2a30');
-    if (S.porch > 0.5) art.glow(g, 248, 134, 60, 'rgba(255,220,150,0.55)');
+    if (E.porch > 0.5) art.glow(g, 248, 134, 60, 'rgba(255,220,150,0.55)');
     // zach
-    const z = S.zach;
-    if (z.visible) {
+    const z = E.zach;
+    if (z && z.visible) {
       art.put(g, art.zach(z.pose, 0), z.x, z.y, { flip: z.face < 0, rot: z.rot });
       if (z.gift) art.put(g, art.prop('gift'), z.x + 9 * z.face, z.y - 9);
-      if (S.phone > 0) {
+      if (E.phone > 0) {
         art.put(g, art.prop('phone'), z.x + 8 * z.face, z.y - 17);
-        if (Math.floor(S.t * 10) % 2 === 0) art.glow(g, z.x + 8 * z.face, z.y - 17, 8, 'rgba(127,215,255,0.8)', 0.7);
+        if (Math.floor(E.t * 10) % 2 === 0) art.glow(g, z.x + 8 * z.face, z.y - 17, 8, 'rgba(127,215,255,0.8)', 0.7);
       }
     }
-    S.parts.draw(g, 0);
+    if (E.parts) E.parts.draw(g, 0);
+    g.restore();
   }
 
   // ================================================================ public: drawing any scene
@@ -595,6 +681,7 @@
     if (S.view === 'living') drawLiving(g, S);
     else if (S.view === 'title') drawTitle(g, S);
     else if (S.view === 'lawn') drawLawn(g, S);
+    else if (S.view === 'ext') drawLawn(g, S.ext);
     else {
       g.fillStyle = '#000';
       g.fillRect(-10, -10, EC.W + 20, EC.H + 20);
@@ -607,9 +694,23 @@
       g.fillRect(0, 0, EC.W, EC.H);
       g.globalAlpha = 1;
     }
+    // the TV warming up: a bright line that opens into the picture
+    if (S.power != null && S.power < 1) {
+      const k = EC.ease.out(Math.min(1, S.power * 1.4));
+      const band = Math.max(2, EC.H * k);
+      const top = (EC.H - band) / 2;
+      g.fillStyle = '#000';
+      g.fillRect(0, 0, EC.W, top);
+      g.fillRect(0, top + band, EC.W, EC.H - top - band);
+      g.globalAlpha = Math.max(0, 1 - S.power) * 0.85;
+      g.fillStyle = '#e8f0ff';
+      g.fillRect(0, top, EC.W, band);
+      g.globalAlpha = 1;
+    }
   };
   EC.scenes.update = function (S, dt) {
-    if (S.view === 'living') updateLiving(S, dt);
+    if (S.power != null && S.power < 1) S.power = Math.min(1, S.power + dt * 1.5);
+    if (S.view === 'living' || S.view === 'ext') updateLiving(S, dt);
     else {
       S.t += dt;
       if (S.parts) S.parts.update(dt);
@@ -638,19 +739,35 @@
 
   // ================================================================ THE INTRO
   function* intro(S, cs) {
+    // The house, early evening.
+    S.view = 'ext';
+    S.ext = { door: 0, porch: 1, beast: 0, zach: null, phone: 0, dusk: true, t: 0, cam: { x: EC.W / 2, y: EC.H / 2, z: 1 } };
+    S.clock.run = false;
     S.black = 1;
-    cs.tween(S, { black: 0 }, 1.4);
-    yield 1.0;
-    yield* narr(cs, 'A grandfather clock ticks. ALEX’S DAD sits in a recliner, perfectly still, remote in hand. The TV is off. He has been sitting like this for a while.', 'INT. ALEX’S PARENTS’ HOUSE — LIVING ROOM — EVENING');
+    cs.tween(S, { black: 0 }, 1.2);
+    cs.tween(S.ext.cam, { x: 92, y: 118, z: 2.6 }, 3.6, EC.ease.inOut);
+    sfx.crickets();
+    yield 3.4;
+
+    // Inside. He has been sitting like this for a while.
+    S.view = 'living';
+    shot(S, 'wide');
+    S.clock.run = true;
+    S.clock.fast = 1;
+    yield 2.4;
+    S.clock.fast = 0;
+    yield 0.9;
+    pan(cs, 'dad', 2.4);
+    yield 3.0;
 
     // The door bursts open.
+    shot(S, 'wide');
     S.door = 1;
     sfx.door();
     EC.fx.shake(3, 0.25);
     S.zach.visible = S.alex.visible = true;
     walkTo(S.zach, 230, 95);
     walkTo(S.alex, 272, 80);
-    showNarr(cs, 'The front door bursts open. ZACH and ALEX enter wearing cone party hats. Zach blows a party horn. It unrolls directly into the Dad’s face.');
     yield () => S.zach.arrived;
     S.zach.face = -1;
     S.alex.face = -1;
@@ -665,57 +782,73 @@
     yield 0.2;
     S.dad.eyes = 'calm';
     S.zach.pose = 'grin';
-    yield 'line';
+    yield 0.5;
 
-    S.zach.pose = 'grin';
-    yield* say(cs, 'zach', 'Mr. — sir! Hey! We can’t stay long. We’re heading to Theo’s birthday party.');
+    yield* say(cs, 'zach', 'Mr. — sir! Hey! We can’t stay long. We’re heading to a birthday party.');
     yield* say(cs, 'alex', 'We just came to grab the gift, Daddy.');
-    yield* say(cs, 'dad', '(slowly) Theo.');
-    showNarr(cs, 'Beat.', null, 'keep');
-    yield 1.4;
-    yield* say(cs, 'dad', 'The couch boy.');
+    yield* say(cs, 'dad', 'His party.', { speed: 12 });
+    yield 1.1;
+    yield* say(cs, 'dad', 'The couch boy.', { cam: 'keep', speed: 22 });
     yield* say(cs, 'zach', 'Ha, yeah, that’s him.');
+
+    // He sets down the remote with great care.
+    shot(S, 'table');
     S.dad.remote = false;
-    S.remoteOnTable = true;
+    S.remote = { x: 166, y: 174 };
+    const r = S.remote;
+    const rs = cs.t;
+    yield () => {
+      const k = EC.ease.inOut(Math.min(1, (cs.t - rs) / 1.8));
+      r.x = EC.lerp(166, 140, k);
+      r.y = EC.lerp(174, 176, k) - Math.sin(k * Math.PI) * 5;
+      return k >= 1;
+    };
     sfx.click();
-    yield* say(cs, 'dad', '(sets down the remote with great care) Zachary. Before you go to the couch boy’s party. I believe you have something for me.');
+    yield 0.7;
+    yield* say(cs, 'dad', 'Zachary. Before you go to the couch boy’s party. I believe you have something for me.');
     S.zach.pose = 'worry';
     yield* say(cs, 'zach', 'I... do?');
     yield* say(cs, 'dad', 'The game. _Eddie’s Couch._ You said you would show me.');
     S.alex.pose = 'worry';
-    yield* say(cs, 'alex', '(quietly) Oh no.');
+    yield* say(cs, 'alex', 'Oh no.', { speed: 14, voice: 'alexm' });
     yield* say(cs, 'dad', 'I cleared my Thursday. I cleared my Friday. I told Gary from church about it, Zachary. Gary is _waiting._');
     S.zach.pose = 'grin';
     yield* say(cs, 'zach', 'Right! Totally. Yes. One sec.');
 
+    // Taps. Scrolls. Taps harder. Scrolls faster. The hat tilts.
+    shot(S, 'two');
     S.zach.pose = 'phone';
-    showNarr(cs, 'Zach pulls out his phone. Taps. Scrolls. Taps harder. Scrolls faster. His party hat slowly tilts sideways.', null, 'two');
-    cs.tween(S.zach, { tilt: -0.55 }, 3.2, EC.ease.inOut);
-    for (let i = 0; i < 9; i++) {
+    cs.tween(S.zach, { tilt: -0.55 }, 3.4, EC.ease.inOut);
+    for (let i = 0; i < 10; i++) {
       sfx.click();
-      yield 0.12 + (9 - i) * 0.03;
+      if (i === 5) S.parts.add({ x: S.zach.x + 3 * S.zach.face, y: FY - 30, vx: 0, vy: 10, g: 60, life: 1.1, size: 2, color: '#9ad7ff' });
+      yield 0.12 + (10 - i) * 0.035;
     }
-    yield 'line';
+    yield 0.6;
 
-    // ---- Scene 2: The Verdict
+    // ---- The Verdict
     S.zach.pose = 'worry';
     yield* say(cs, 'zach', 'So, funny thing. The guy who made it... deleted it.');
+    shot(S, 'clock');
+    yield 0.4;
     S.clock.run = false;
-    yield* narr(cs, 'Silence. The grandfather clock stops ticking.');
-    yield* say(cs, 'dad', 'Deleted.');
+    yield 1.7;
+    yield* say(cs, 'dad', 'Deleted.', { speed: 14 });
     S.zach.pose = 'poof';
     S.parts.burst(10, { x: S.zach.x - 8, y: FY - 34, g: 40, s0: 20, s1: 60, life: 0.8, size: 2, color: ['#ffffff', '#ffd23e', '#ff5aa5'] });
-    yield* say(cs, 'zach', 'Like, off the internet. Gone. Colby just — (makes a little poof gesture) — poof.');
+    yield* say(cs, 'zach', 'Like, off the internet. Gone. Colby just — poof.');
 
+    // He rises. He is somehow taller standing than sitting.
     S.zach.pose = 'worry';
+    shot(S, 'wide');
     S.dad.mode = 'stand';
     S.dad.x = 182;
     S.dad.sy = 0.55;
     S.dad.eyes = 'glare';
     sfx.creak();
-    cs.tween(S.dad, { sy: 1.16 }, 1.6, EC.ease.out);
-    showSay(cs, 'dad', '(rising from the recliner, which is somehow taller standing than sitting) You looked me in the eye, at Easter dinner, over a ham, and told me I would see that game.');
-    yield 'line';
+    cs.tween(S.dad, { sy: 1.16 }, 1.8, EC.ease.out);
+    yield 1.9;
+    yield* say(cs, 'dad', 'You looked me in the eye and told me I would see that game.');
     yield* say(cs, 'zach', 'I didn’t know he was gonna —');
     S.dad.pose = 'point';
     yield* say(cs, 'dad', 'You are _unreliable._');
@@ -724,50 +857,67 @@
     yield* say(cs, 'zach', 'I’d say more of a “miscommunicator” —');
     yield* say(cs, 'dad', 'A man who cannot produce a couch game cannot produce a _future._ You are not good enough for my daughter.');
     S.alex.pose = 'worry';
-    yield* say(cs, 'alex', 'Daddy, please, it’s Theo’s birthday!');
+    yield* say(cs, 'alex', 'Daddy, please! It’s his birthday!');
+
+    // He ignores her. Off come the reading glasses, folded very neatly.
     S.dad.pose = 'glasses';
     S.dad.glasses = false;
     sfx.click();
-    yield* say(cs, 'dad', '(ignoring her, removing his reading glasses and folding them very neatly) I want you to know, Zachary... I gave you every chance.');
+    yield 0.5;
+    sfx.click();
+    yield* say(cs, 'dad', 'I want you to know, Zachary... I gave you every chance.');
 
-    showNarr(cs, 'He places the glasses on the end table. Squares them up. Pats them once.', null, 'dad');
-    cs.tween(S.dad, { x: 156 }, 0.9);
-    yield 1.0;
+    // On the end table. Squared up. Patted once.
+    cs.tween(S.dad, { x: 154 }, 1.0);
+    yield 1.05;
+    shot(S, 'table');
     S.dad.pose = 'down';
-    S.glassesOnTable = true;
+    S.glassesItem = { x: S.dad.x - 0.5, y: FY - 34 };
+    cs.tween(S.glassesItem, { x: 130, y: 176 }, 0.7, EC.ease.out);
+    yield 0.8;
     sfx.click();
-    yield 0.35;
+    yield 0.45;
+    S.glassesItem.x = 129;
     sfx.click();
-    yield 0.4;
-    S.glassesPat = 1;
+    yield 0.3;
+    S.glassesItem.x = 130;
+    sfx.click();
+    yield 0.55;
+    S.glassesItem.y = 177;
     sfx.pat();
-    yield 0.18;
-    S.glassesPat = 0;
+    yield 0.16;
+    S.glassesItem.y = 176;
+    yield 0.8;
     cs.tween(S.dad, { x: 182 }, 0.9);
-    yield 1.0;
-    yield 'line';
+    shot(S, 'dad');
+    yield 0.95;
 
-    yield* say(cs, 'dad', 'Son...');
-    showNarr(cs, 'The lights flicker.', null, 'keep');
+    yield* say(cs, 'dad', 'Son...', { speed: 10 });
     for (let i = 0; i < 4; i++) {
       S.dim = 0.85;
+      S.lamp = 0.1;
       sfx.flicker();
       yield 0.09 + i * 0.03;
       S.dim = 0.1;
+      S.lamp = 1;
       yield 0.16 + (i % 2) * 0.12;
     }
     S.dim = 0.35;
+    S.lamp = 0.5;
     S.dad.eyes = 'glow';
-    yield 'line';
-    yield* say(cs, 'dad', '...I’m going to kill you.');
+    yield 0.5;
+    yield* say(cs, 'dad', '...I’m going to kill you.', { speed: 22 });
 
-    // ---- Scene 3: Not Again
+    // ---- Not Again
+    shot(S, 'wide');
     S.dim = 0;
-    EC.audio.sfx.thunder();
+    S.lamp = 1;
+    sfx.thunder();
+    S.lightning = 0.5;
     EC.fx.flash('#e8f0ff', 0.6);
     EC.fx.shake(4, 0.6);
-    showNarr(cs, 'Thunder outside, despite clear skies. The Dad’s cardigan buttons pop off one by one, pinging off the walls like bullets. One knocks Zach’s party hat clean off.');
     yield 0.9;
+    // The cardigan buttons go, one by one, like bullets. One takes Zach's hat.
     for (let i = 0; i < 4; i++) {
       S.dad.buttons = 3 - i;
       const bx = S.dad.x - 5;
@@ -775,89 +925,84 @@
       const hatShot = i === 2;
       const ang = hatShot ? Math.atan2(FY - 38 - by, S.zach.x - bx) : EC.rand(-Math.PI, 0);
       const sp = 340;
-      S.parts.add({
-        spr: art.prop('button'),
-        x: bx,
-        y: by,
-        vx: Math.cos(ang) * sp,
-        vy: Math.sin(ang) * sp,
-        g: 300,
-        life: 2.2,
-        vr: 20,
-        floor: FY - 1,
-        walls: [6, 474, TOP + 2],
-        onBounce: () => sfx.ping(),
-      });
+      S.parts.add({ spr: art.prop('button'), x: bx, y: by, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, g: 300, life: 2.2, vr: 20, floor: FY - 1, walls: [6, 474, TOP + 2], onBounce: () => sfx.ping() });
       sfx.ping();
       if (hatShot) {
         yield 0.12;
         S.zach.hat = false;
-        S.hatFly = { x: S.zach.x + 1, y: FY - 28, vx: 70, vy: -260, rot: 0, vr: 9 };
+        S.hatFly = { x: S.zach.x + 1, y: FY - 29, vx: 70, vy: -260, rot: 0, vr: 9 };
         S.zach.pose = 'shock';
         sfx.whoosh();
         yield 0.3;
       } else yield 0.36;
     }
-    yield 'line';
+    yield 0.9;
 
-    showNarr(cs, 'His mustache thickens. His khakis hold — they are good khakis — but everything above them grows. Horns curl out of his receding hairline. His eyes glow the exact color of a DVR recording light.');
+    // The mustache thickens. The khakis hold. Everything above them grows.
+    shot(S, 'dad');
     S.dad.stache = true;
-    yield 0.6;
+    sfx.stomp();
+    yield 0.7;
     S.dad.mode = 'grow';
     S.dad.grow = 0;
-    EC.audio.sfx.roar(2.4);
+    sfx.roar(2.4);
     EC.fx.shake(3, 2.4);
     cs.tween(S.dad, { grow: 1 }, 2.4, EC.ease.in);
+    pan(cs, 'beast', 2.4);
     yield 2.4;
     S.dad.mode = 'beast';
     ui.rec(true);
     EC.fx.flash('#ff2b2b', 0.3);
-    yield 'line';
+    yield 1.0;
 
-    showNarr(cs, 'The recliner, now too small, is crushed beneath him with a sad mechanical whine.');
+    // The recliner, now too small, is crushed beneath him.
+    shot(S, 'wide');
     cs.tween(S.dad, { x: 184 }, 0.3);
     yield 0.4;
     S.recliner = 'crushed';
     sfx.whine();
     EC.fx.shake(2, 0.3);
     S.parts.burst(8, { x: 182, y: FY - 20, g: 500, s0: 60, s1: 140, a0: -Math.PI, a1: 0, life: 1.4, sizes: [2, 3], color: [C.chair, C.chairS, C.metal], floor: FY - 1 });
-    yield 'line';
+    yield 1.5;
 
     S.alex.pose = 'kneel';
-    yield* say(cs, 'alex', '(dropping to her knees, arms outstretched) No, Daddy, NOOOOOO!!! Not again!');
+    sfx.land();
+    yield 0.4;
+    yield* say(cs, 'alex', 'No, Daddy, NOOOOOO!!! Not again!');
     S.zach.face = 1;
     S.zach.pose = 'turn';
-    yield* say(cs, 'zach', '(slowly turning to her) ...Again?');
+    yield 0.5;
+    yield* say(cs, 'zach', '...Again?', { speed: 16 });
     S.alex.pose = 'away';
-    yield* say(cs, 'alex', '(not making eye contact) We don’t talk about Brandon.');
+    yield* say(cs, 'alex', 'We don’t talk about Brandon.');
     S.zach.pose = 'shock';
     yield* say(cs, 'zach', 'WHO IS BRANDON?');
 
+    // One slipper on the coffee table. Full height. The roar.
     S.zach.face = -1;
-    showNarr(cs, 'The beast plants one slipper on the coffee table, rises to full height, and lets out a roar that sets off every smoke detector in the house. Somewhere, Gary from church feels it.');
+    shot(S, 'beast');
     S.dad.stomp = true;
     sfx.stomp();
     EC.fx.shake(3, 0.3);
-    yield 0.7;
+    yield 0.8;
     S.dad.roar = true;
     sfx.roar(1.9);
     EC.fx.shake(5, 1.6);
-    yield 0.8;
+    yield 0.6;
+    shot(S, 'wide');
     S.smoke = 6;
     sfx.beeps(12, 0.32);
-    yield 0.5;
-    cs.tween(S, { gary: 1 }, 0.4);
-    yield 2.4;
-    yield 'line';
-    S.dad.roar = false;
+    yield 0.9;
+    // Somewhere, Gary from church feels it.
+    cs.tween(S, { gary: 1 }, 0.3);
+    yield 2.6;
     cs.tween(S, { gary: 0 }, 0.3);
-    S.dad.roar = true;
+    yield 0.3;
     sfx.roar(1.4);
     EC.fx.shake(3, 1.2);
-    yield* say(cs, 'beast', '(voice like a lawnmower through a megaphone) WHERE. IS. MY. GAME.', { loud: true });
+    yield* say(cs, 'beast', 'WHERE. IS. MY. GAME.', { loud: true });
 
-    // SMASH CUT TO BLACK.
-    clearText();
+    // Smash cut to black.
     sfx.smash();
     S.view = 'black';
     S.smoke = 0;
@@ -866,7 +1011,7 @@
   }
 
   function* titleCard(S, cs) {
-    clearText();
+    ui.dialog.hide();
     S.view = 'title';
     S.title = { alpha: 0, hatOn: true, falling: true, ft: 0, hatX: 300, hatY: -40, hatRot: 0, landed: false };
     S.black = 0;
@@ -895,6 +1040,7 @@
     cs.tween(S, { black: 0 }, 0.8);
     sfx.door();
     yield 0.3;
+    // Zach tumbles out onto the lawn.
     cs.tween(S.zach, { x: 292, rot: Math.PI * 2 }, 0.9, EC.ease.out);
     const zz = S.zach;
     const start = cs.t;
@@ -907,31 +1053,37 @@
     zz.y = LY;
     zz.pose = 'shock';
     sfx.land();
-    yield* narr(cs, 'Zach tumbles out onto the lawn' + (info.gift ? ', Theo’s gift clutched to his chest.' : '.'), 'EXT. FRONT PORCH — NIGHT');
+    S.parts.burst(6, { x: zz.x, y: LY - 2, g: -20, s0: 10, s1: 40, a0: -Math.PI, a1: 0, life: 0.6, size: 2, color: ['#3c5c34', '#5a7a4a'] });
+    yield 0.9;
+    // The beast fills the doorway.
     zz.face = -1;
     zz.pose = 'worry';
-    S.beastRoar = false;
     cs.tween(S, { beast: 1 }, 0.4, EC.ease.out);
     sfx.stomp();
     EC.fx.shake(3, 0.3);
+    yield 1.1;
+    // He looks down at his slippers. He looks at the wet grass.
+    S.beastLook = 'down';
+    yield 1.1;
+    S.beastLook = 'side';
+    yield 1.0;
+    S.beastLook = '';
     yield 0.4;
-    yield* narr(cs, 'The beast fills the doorway. He stops. He looks down at his slippers. He looks at the wet grass.');
     yield* say(cs, 'beast', 'THESE. ARE. MY. INDOOR. SLIPPERS.', { loud: true });
-    showNarr(cs, 'He closes the door very gently. Click. Then the porch light goes off.');
-    cs.tween(S, { door: 0 }, 0.7);
-    yield 0.75;
+    // He closes the door very gently. Click. The porch light goes off.
+    cs.tween(S, { door: 0 }, 1.6);
+    yield 1.65;
     S.beast = 0;
     sfx.click();
-    yield 0.6;
+    yield 0.7;
     S.porch = 0;
     sfx.lightsOff();
-    yield 'line';
-    yield* say(cs, 'alex', '(muffled, from inside) Tell Theo happy birthday!');
+    yield 0.9;
+    yield* say(cs, 'alex', 'Tell him happy birthday!', { muffled: true, voice: 'alexm' });
     yield* say(cs, 'zach', '...Is she just staying in there?');
     if (!info.gift) {
       zz.pose = 'shock';
-      yield* say(cs, 'zach', '(patting his pockets) The gift. I left Theo’s gift in there.');
-      showNarr(cs, 'The porch light flicks on. Then off. Then on. Zach is not going back in there.');
+      yield* say(cs, 'zach', 'The gift. I left the gift in there.');
       for (let i = 0; i < 3; i++) {
         S.porch = 1;
         sfx.click();
@@ -941,20 +1093,20 @@
         yield 0.35;
       }
       S.porch = 1;
-      yield 'line';
+      yield 0.8;
     }
     zz.pose = 'phone';
     zz.face = 1;
     S.phone = 1;
     sfx.buzz();
-    yield 0.9;
-    const disks = info.disks || 0;
-    let text = 'hey. this is brandon. he does this every time someone promises him a game. you have until Easter.';
-    if (disks >= info.disksTotal) text = 'hey. this is brandon. heard you got every backup of eddie’s couch out of there. that’s further than i ever got. respect.';
-    yield* say(cs, 'phone', text, { label: 'UNKNOWN NUMBER' });
+    yield 1.1;
+    const all = (info.disks || 0) >= info.disksTotal;
+    const text = all
+      ? 'hey. this is brandon. heard you got every backup of eddie’s couch out of there. further than i ever got.'
+      : 'hey. this is brandon. he does this every time someone promises him a game.';
+    yield* say(cs, 'phone', text, { voice: 'phone' });
     zz.pose = 'shock';
     yield* say(cs, 'zach', 'WHO IS BRANDON?!');
-    clearText();
     cs.tween(S, { black: 0.55 }, 0.6);
     yield 0.6;
   };

@@ -170,28 +170,13 @@ body {
   font-size: clamp(11px, 2.35cqw, 21px);
   line-height: 1.3;
 }
-.direction {
-  top: 4%;
-  left: 3.5%;
-  right: 3.5%;
-  margin: 0 auto;
-  max-width: 44em;
-  padding: .65em .95em .6em;
-  background: var(--paper);
-  color: var(--ink);
-  font-family: var(--font-script);
-  font-style: italic;
-  border-radius: 2px;
-  box-shadow: 0 .3em 0 rgba(0, 0, 0, .35);
-  transform: rotate(-.35deg);
-}
-.direction .slug { display: block; font-style: normal; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; }
-.direction .line { margin: 0; }
-.direction .more, .dialog .more { position: absolute; right: .6em; bottom: .25em; font-style: normal; font-size: .8em; animation: nudge .8s steps(2) infinite; }
 .dialog {
   left: 3%;
   right: 3%;
   bottom: 4%;
+  display: flex;
+  gap: .85em;
+  align-items: flex-start;
   min-height: 3.9em;
   padding: .95em 1.1em .75em;
   background: rgba(22, 15, 19, .93);
@@ -211,45 +196,29 @@ body {
   font: 400 .78em/1.1 var(--font-display);
   letter-spacing: .05em;
 }
+.dialog .text { flex: 1 1 auto; min-width: 0; }
 .dialog .line { margin: 0; font-size: 1.06em; }
-.dialog .line em, .callout em { font-family: var(--font-script); font-style: italic; color: var(--muted); }
+.dialog .portrait {
+  flex: none;
+  width: 3.4em;
+  height: 3.4em;
+  margin-top: -.1em;
+  border-radius: .35em;
+  background: radial-gradient(circle at 50% 35%, rgba(255, 255, 255, .14), rgba(255, 255, 255, .03));
+  box-shadow: inset 0 0 0 .12em var(--who, var(--cream));
+  image-rendering: pixelated;
+}
+.dialog.muffled .line { opacity: .72; font-style: italic; }
 .dialog .line i { font-style: italic; color: #fff; }
 .dialog .rest { visibility: hidden; }
 .dialog[data-who="zach"] { --who: var(--zach); }
 .dialog[data-who="alex"] { --who: var(--alex); }
 .dialog[data-who="dad"] { --who: var(--dad); }
-.dialog[data-who="gary"] { --who: #b9b2a4; }
 .dialog[data-who="phone"] { --who: #8fd16a; }
 .dialog[data-who="beast"] { --who: var(--beast); }
 .dialog.loud .line { font: 400 1.5em/1.15 var(--font-display); color: var(--beast); letter-spacing: .03em; }
 .dialog.loud { animation: rumble .12s steps(2) infinite; }
-.callout {
-  top: 4%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: max-content;
-  max-width: 82%;
-  padding: .45em .8em .45em .5em;
-  display: flex;
-  gap: .55em;
-  align-items: baseline;
-  background: var(--cream);
-  color: var(--ink);
-  border-radius: .55em;
-  box-shadow: 0 .25em 0 rgba(0, 0, 0, .4);
-}
-.callout b {
-  flex: none;
-  padding: .15em .45em .1em;
-  border-radius: .3em;
-  background: var(--alex);
-  color: var(--ink);
-  font: 400 .72em/1.1 var(--font-display);
-}
-.callout.pop { animation: pop .25s ease-out; }
-.roomcard { left: 3.5%; bottom: 5.5%; display: flex; flex-direction: column; gap: .1em; pointer-events: none; }
-.roomcard b { font: 400 1.45em/1 var(--font-display); color: var(--cream); text-shadow: .1em .1em 0 var(--ink); letter-spacing: .02em; }
-.roomcard span { color: var(--paper); text-shadow: .08em .08em 0 var(--ink); }
+.dialog.loud .portrait { animation: rumble .1s steps(2) infinite; }
 .hud {
   top: 3.5%;
   right: 3%;
@@ -265,21 +234,7 @@ body {
 .hud span { display: inline-flex; align-items: center; gap: .3em; }
 .hud svg { width: 1.05em; height: 1.05em; }
 .hud .off { opacity: .28; }
-.hud .run { font: 400 .7em/1 var(--font-display); color: var(--ink); background: var(--zach); padding: .25em .4em; border-radius: .25em; }
-.hud .run.idle { background: transparent; color: var(--muted); box-shadow: inset 0 0 0 1px var(--muted); }
-.meter {
-  left: 1.5%;
-  top: 50%;
-  transform: translateY(-50%);
-  padding: .3em .5em;
-  border-radius: .35em;
-  background: rgba(60, 4, 6, .82);
-  color: #ffd9d4;
-  font: 400 .78em/1.1 var(--font-display);
-  box-shadow: 0 0 1em rgba(255, 43, 43, .55);
-  font-variant-numeric: tabular-nums;
-  pointer-events: none;
-}
+.hud .pulse { animation: hudpop .45s ease-out; }
 .bubble {
   transform: translate(-50%, -100%);
   padding: .2em .5em .15em;
@@ -291,7 +246,7 @@ body {
   pointer-events: none;
   box-shadow: 0 .18em 0 rgba(0, 0, 0, .35);
 }
-.bubble.beast { background: #2a0a0c; color: #ffb3aa; font: 400 .9em/1.1 var(--font-display); letter-spacing: .03em; }
+.bubble.pop { animation: bubblepop .18s ease-out; }
 .tutorial {
   left: 50%;
   top: 46%;
@@ -349,8 +304,6 @@ kbd {
 }
 .prompt small { display: block; margin-top: .45em; font: 400 .55em/1.3 var(--font-ui); letter-spacing: .04em; color: var(--paper); text-shadow: .1em .1em 0 var(--ink); }
 .prompt.blink { animation: blink 1.1s steps(2) infinite; }
-.prompt.hint { padding: .45em .8em .5em; border-radius: .45em; background: rgba(22, 15, 19, .82); text-shadow: none; }
-.prompt.hint small { margin: 0; font-size: .62em; }
 .panel {
   inset: 0;
   display: grid;
@@ -398,7 +351,8 @@ kbd {
 @keyframes nudge { 50% { transform: translateY(.18em); } }
 @keyframes blink { 50% { opacity: .35; } }
 @keyframes rumble { 50% { transform: translate(.08em, -.06em); } }
-@keyframes pop { from { transform: translateX(-50%) scale(.85); } to { transform: translateX(-50%) scale(1); } }
+@keyframes hudpop { 0% { transform: scale(1); } 35% { transform: scale(1.45); } 100% { transform: scale(1); } }
+@keyframes bubblepop { from { transform: translate(-50%, -80%) scale(.6); } to { transform: translate(-50%, -100%) scale(1); } }
 
 /* ---------- below the TV ---------- */
 .legend {
@@ -468,6 +422,9 @@ body.touch-ui .legend { display: none; }
   .tv-foot { padding: 6px 2px 8px; gap: 8px; }
   .grille { display: none; }
   .knob { padding: 6px 8px; font-size: 11px; }
+  .dialog { padding: .7em .8em .55em; min-height: 3.2em; gap: .6em; }
+  .dialog .portrait { width: 2.7em; height: 2.7em; }
+  .skip { font-size: .72em; }
 }
 @media (orientation: landscape) and (max-height: 540px) {
   body { padding-block: 6px; }
@@ -491,7 +448,7 @@ body.touch-ui .legend { display: none; }
   .face [data-act="jump"] { width: 118px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .dialog.loud, .prompt.blink, .direction .more, .dialog .more, .callout.pop { animation: none; }
+  .dialog.loud, .dialog.loud .portrait, .prompt.blink, .dialog .more, .bubble.pop, .hud .pulse { animation: none; }
 }
 </style>
 </head>
@@ -500,21 +457,15 @@ body.touch-ui .legend { display: none; }
   <div class="bezel">
     <div class="screen" id="screen" tabindex="0" aria-label="Eddie's Couch 2 game screen">
       <canvas id="game" width="960" height="540" aria-hidden="true"></canvas>
-      <div class="ov direction" id="direction" hidden><span class="slug"></span><p class="line"></p><i class="more" aria-hidden="true">▼</i></div>
-      <div class="ov roomcard" id="roomcard" hidden><b></b><span></span></div>
       <div class="ov hud" id="hud" hidden>
         <span title="Eddie's Couch backups"><svg viewBox="0 0 10 10" aria-hidden="true"><path fill="#3f7fd9" d="M0 0h8l2 2v8H0z"/><path fill="#c9ced6" d="M2 0h5v3H2z"/><path fill="#1d1519" d="M5 .6h1.2v1.8H5z"/><path fill="#f3ebd9" d="M1.5 5h7v4.2h-7z"/></svg><b id="hud-disks">0/5</b></span>
         <span id="hud-key" class="off" title="Front door key"><svg viewBox="0 0 10 10" aria-hidden="true"><path fill="#e2b84a" d="M1 3h3v4H1zM4 4.3h5v1.4H4zM7 5.7h1v1.6H7zM5.4 5.7h1v1.2h-1z"/><path fill="#1d1519" d="M2 4.3h1v1.4H2z"/></svg></span>
-        <span id="hud-gift" class="off" title="Theo's gift"><svg viewBox="0 0 10 10" aria-hidden="true"><path fill="#d8433a" d="M1 4h8v6H1z"/><path fill="#e2b84a" d="M4.3 4h1.4v6H4.3zM0 3h10v1.6H0zM2 1l3 2 3-2v2H2z"/></svg></span>
-        <b class="run idle" id="hud-run">WALK</b>
+        <span id="hud-gift" class="off" title="The gift"><svg viewBox="0 0 10 10" aria-hidden="true"><path fill="#d8433a" d="M1 4h8v6H1z"/><path fill="#e2b84a" d="M4.3 4h1.4v6H4.3zM0 3h10v1.6H0zM2 1l3 2 3-2v2H2z"/></svg></span>
         <b id="hud-time">0:00</b>
       </div>
-      <div class="ov callout" id="callout" hidden><b>ALEX</b><span></span></div>
       <div class="ov bubble" id="bubble-zach" hidden></div>
-      <div class="ov bubble beast" id="bubble-beast" hidden></div>
-      <div class="ov meter" id="meter" hidden></div>
       <div class="ov tutorial" id="tutorial" hidden></div>
-      <div class="ov dialog" id="dialog" hidden><b class="who"></b><p class="line"></p><i class="more" aria-hidden="true">▼</i></div>
+      <div class="ov dialog" id="dialog" hidden><canvas class="portrait" width="64" height="64" aria-hidden="true" hidden></canvas><div class="text"><b class="who"></b><p class="line"></p></div><i class="more" aria-hidden="true">▼</i></div>
       <div class="ov prompt" id="prompt" hidden></div>
       <div class="ov panel" id="panel" hidden role="dialog" aria-modal="true" aria-labelledby="panel-title"><div class="card"><h2 id="panel-title"></h2><div class="body"></div><div class="actions"></div></div></div>
       <button class="ov skip" id="skip" type="button" hidden>Skip ▸▸</button>

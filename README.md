@@ -4,7 +4,7 @@ Zach promised his girlfriend's dad he'd show him *Eddie's Couch*. The game no lo
 
 A browser game in three parts:
 
-1. **The intro.** All three scenes of the intro script (The Hats, The Verdict, Not Again), played out in the living room with close-ups, then the title card and the party hat.
+1. **The intro.** All three scenes of the intro script (The Hats, The Verdict, Not Again). There's no narration: the scenes act the story out with camera moves and close-ups, and only the characters' lines are text. Then the title card and the party hat.
 2. **The tutorial.** Press [A] to apologize. It does nothing. Press [B] to run. A wall explodes.
 3. **Level 1: Escape the House.** Five rooms, the Girlfriend's Dad Beast right behind you, and a front door that is locked.
 
@@ -25,8 +25,9 @@ Open `index.html` in a browser. There's no build step, no dependencies, and no s
 ## The house rules
 
 - **He won't step on a carpet in his slippers.** He stops to take them off, carries them across, and puts them back on at the far side. That's your window.
-- **Alex shouts warnings** from wherever she's hiding: the Easter ham, the remote, the gravy boat, the commemorative plates.
-- **The front door is locked.** The key is on the hall table, right next to Theo's gift. Taking the gift slows you down, and the ending notices whether you have it.
+- **Alex shouts warnings** from where she's hiding near the camera: a picture (jump, duck, go, the key's behind you), never words, so nothing covers the play area.
+- **He throws things:** a casserole, the TV remote, the gravy boat, the commemorative plates.
+- **The front door is locked.** The key is on the hall table, right next to the birthday gift. Taking the gift slows you down, and the ending notices whether you have it.
 - **Five Eddie's Couch backup disks** are hidden on top of things. Brandon notices if you get all of them.
 
 Getting caught sends you back to the start of the room you're in. Disks you've found stay found.
@@ -41,8 +42,8 @@ Plain JavaScript, Canvas 2D and Web Audio. All art is drawn in code and every so
 | `src/core.js` | Canvas sizing, keyboard/touch/gamepad input, the fixed-step loop, screen shake, particles, the dialogue typewriter and overlays |
 | `src/audio.js` | Sound effects, character voice blips, and a small step sequencer for the chase and ending music |
 | `src/art.js` | Every sprite (Zach, Alex, Dad, the Beast, props) and the room painters |
-| `src/scenes.js` | The cutscene runner (generator-based scripts), the intro, the title card and the ending |
-| `src/level.js` | Level 1: room layout, Zach's movement, the Beast's AI, throws, pickups, the door |
+| `src/scenes.js` | The cutscene runner (generator-based scripts), camera cuts and pans, speaker portraits, the intro, the title card and the ending |
+| `src/level.js` | Level 1: room layout, Zach's movement, the Beast's AI, throws, pickups, the door, night lighting and the foreground layer |
 | `src/main.js` | The flow between title, intro, tutorial, play, pause, game over and results |
 
 `EC.debug.level` and `EC.debug.mode` are exposed for poking at a running game from the browser console.

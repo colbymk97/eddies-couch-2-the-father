@@ -576,8 +576,8 @@
       R(g, 13, 25, 7, 4, C.skin);
       R(g, 44, 25, 7, 4, C.skin);
       if (o.remote) {
-        R(g, 47, 20, 3, 7, '#2b2b30');
-        R(g, 48, 21, 1, 1, '#ff4040');
+        R(g, 14, 20, 3, 7, '#2b2b30');
+        R(g, 15, 21, 1, 1, '#ff4040');
       }
       R(g, 29, 17, 6, 3, C.skinS);
       dadFace(g, 32, 4, { glasses: o.glasses !== false, eyes: o.eyes || 'calm' });
@@ -642,7 +642,7 @@
   // Front view, 84x106. The khakis hold. They are good khakis.
   art.beastFront = function (o) {
     o = o || {};
-    const key = 'beast-f-' + (o.roar ? 'r' : '') + (o.stomp ? 's' : '');
+    const key = 'beast-f-' + (o.roar ? 'r' : '') + (o.stomp ? 's' : '') + (o.look || '');
     return sprite(key, 84, 106, (g) => {
       if (o.stomp) {
         R(g, 44, 74, 7, 17, C.khaki);
@@ -724,8 +724,10 @@
       R(g, 44, 10, 6, 2, C.stacheS);
       R(g, 39, 11, 2, 1, C.stacheS);
       R(g, 43, 11, 2, 1, C.stacheS);
-      R(g, 35, 12, 4, 2, C.eye);
-      R(g, 45, 12, 4, 2, C.eye);
+      const ey = o.look === 'down' ? 14 : 12;
+      const ex = o.look === 'side' ? -2 : 0;
+      R(g, 35 + ex, ey, 4, 2, C.eye);
+      R(g, 45 + ex, ey, 4, 2, C.eye);
       R(g, 40, 13, 4, 5, C.bSkinS);
       R(g, 33, 17, 18, 4, C.stache);
       R(g, 31, 19, 3, 6, C.stache);
@@ -873,16 +875,19 @@
 
   // ================================================================ PROPS
   const PROPS = {
-    ham: [16, 11, (g) => {
-      R(g, 2, 1, 10, 9, '#e5857f');
-      R(g, 1, 3, 12, 6, '#e5857f');
-      R(g, 3, 2, 7, 2, '#f6b4a6');
-      R(g, 2, 6, 10, 1, '#b9524f');
-      R(g, 4, 8, 7, 1, '#b9524f');
-      R(g, 5, 3, 1, 4, '#b9524f');
-      R(g, 9, 3, 1, 4, '#b9524f');
-      R(g, 12, 4, 3, 2, '#f4ead7');
-      R(g, 14, 3, 2, 4, '#f4ead7');
+    // a casserole in a floral glass dish, still warm
+    casserole: [16, 9, (g) => {
+      R(g, 1, 3, 14, 6, '#f4f1ea');
+      R(g, 0, 4, 1, 2, '#f4f1ea');
+      R(g, 15, 4, 1, 2, '#f4f1ea');
+      R(g, 2, 6, 12, 1, '#3d6fc4');
+      R(g, 4, 6, 1, 1, '#d8433a');
+      R(g, 9, 6, 1, 1, '#d8433a');
+      R(g, 2, 1, 12, 3, '#e0913a');
+      R(g, 3, 0, 4, 1, '#f2b45a');
+      R(g, 9, 0, 3, 1, '#f2b45a');
+      R(g, 4, 2, 2, 1, '#b8642a');
+      R(g, 10, 1, 2, 1, '#b8642a');
     }, true],
     remote: [12, 5, (g) => {
       R(g, 0, 0, 12, 5, '#2b2b30');
@@ -1239,7 +1244,7 @@
     const iw = w - 4;
     const ih = h - 4;
     R(g, ix, iy, iw, ih, C.ink);
-    const bg = { family: '#9cc3d9', brandon: '#9fd3a0', easter: '#f0d58a', sailboat: '#7fb3d9', portrait: '#c9a26e', dog: '#e8d5a8', wedding: '#e9e4f2', stitch: '#f4f1ea', calendar: '#f4f1ea', mountain: '#a7c7e7' }[kind] || '#cfc8b8';
+    const bg = { family: '#9cc3d9', brandon: '#9fd3a0', fruit: '#e9dcc0', sailboat: '#7fb3d9', portrait: '#c9a26e', dog: '#e8d5a8', wedding: '#e9e4f2', stitch: '#f4f1ea', calendar: '#f4f1ea', mountain: '#a7c7e7' }[kind] || '#cfc8b8';
     R(g, ix + 1, iy + 1, iw - 2, ih - 2, bg);
     const fx = ix + 1;
     const fy = iy + 1;
@@ -1262,11 +1267,13 @@
         R(g, fx + fw - 9, fy + fh - 10, 6, 6, '#ffe45c');
         R(g, fx + fw - 8, fy + fh - 8, 4, 1, '#c9a400');
         break;
-      case 'easter':
-        R(g, fx + 1, fy + fh - 5, fw - 2, 2, '#7a4a2a');
-        R(g, fx + fw / 2 - 3, fy + fh - 9, 6, 4, '#e5857f');
-        person(fx + 1, fy + fh - 10, C.cardi, C.dHair);
-        person(fx + fw - 4, fy + fh - 10, C.zKnit, C.zHair);
+      case 'fruit':
+        R(g, fx + 1, fy + fh - 4, fw - 2, 4, '#7a4a2a');
+        R(g, fx + fw / 2 - 8, fy + fh - 9, 16, 5, '#c9ced6');
+        R(g, fx + fw / 2 - 7, fy + fh - 13, 5, 5, '#d8433a');
+        R(g, fx + fw / 2 - 2, fy + fh - 14, 5, 5, '#e2b84a');
+        R(g, fx + fw / 2 + 3, fy + fh - 13, 4, 5, '#6a9a3a');
+        R(g, fx + fw / 2 - 1, fy + fh - 17, 3, 3, '#7a3a8a');
         break;
       case 'sailboat':
         R(g, fx, fy + fh - 4, fw, 4, '#3d6fc4');
@@ -1372,7 +1379,7 @@
     R(g, x + 32, floor - 74, 2, 14, '#c9ced6');
     R(g, x + 32, floor - 44, 2, 22, '#c9ced6');
     R(g, x + 6, floor - 76, 9, 7, '#f4f1ea');
-    R(g, x + 7, floor - 73, 4, 3, '#e5857f');
+    R(g, x + 7, floor - 73, 4, 3, '#7ab55c');
     R(g, x + 18, floor - 70, 5, 5, '#3fa9ff');
     R(g, x + 8, floor - 46, 8, 10, '#f4f1ea');
     R(g, x + 9, floor - 44, 6, 1, C.ink);

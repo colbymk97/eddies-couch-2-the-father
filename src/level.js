@@ -19,11 +19,11 @@
   const MAX_FALL = 560;
 
   const ROOMS = [
-    { id: 'hall', x0: 0, x1: 1000, wall: 'hall', floor: 'wood', name: 'THE HALLWAY', sub: 'Forty-one framed photos. None of you.', beast: 140 },
-    { id: 'kitchen', x0: 1000, x1: 2000, wall: 'kitchen', floor: 'tile', name: 'THE KITCHEN', sub: 'The Easter ham lives here now.', beast: 150 },
-    { id: 'dining', x0: 2000, x1: 2900, wall: 'dining', floor: 'wood', name: 'THE DINING ROOM', sub: 'Where the promise was made.', beast: 157 },
-    { id: 'sitting', x0: 2900, x1: 3800, wall: 'sitting', floor: 'wood', name: 'THE FORMAL SITTING ROOM', sub: 'Nobody has sat in here since 1998.', beast: 162 },
-    { id: 'foyer', x0: 3800, x1: LEVEL_W, wall: 'foyer', floor: 'wood', name: 'THE FOYER', sub: 'The front door. Freedom. Probably locked.', beast: 150, noSprint: true },
+    { id: 'hall', x0: 0, x1: 1000, wall: 'hall', floor: 'wood', beast: 140 },
+    { id: 'kitchen', x0: 1000, x1: 2000, wall: 'kitchen', floor: 'tile', beast: 150 },
+    { id: 'dining', x0: 2000, x1: 2900, wall: 'dining', floor: 'wood', beast: 157 },
+    { id: 'sitting', x0: 2900, x1: 3800, wall: 'sitting', floor: 'wood', beast: 162 },
+    { id: 'foyer', x0: 3800, x1: LEVEL_W, wall: 'foyer', floor: 'wood', beast: 150, noSprint: true },
   ];
   const DOORWAYS = [1000, 2000, 2900, 3800];
   const CARPETS = [
@@ -67,27 +67,42 @@
   const ROOMBA = { x0: 800, x1: 962 };
   const DOOR_X = 4568;
 
-  function slideHint() {
-    return EC.input.device === 'touch' ? 'Slide under the table! Hold ▼ while you run!' : 'Slide under the table! Hold ↓ while you run!';
-  }
-  // Alex shouts from wherever she's hiding.
+  // Where things happen. Alex shouts a warning (a picture, never words) from wherever she's hiding.
   const TRIGGERS = [
-    { x: 250, alex: 'RUN, ZACH! He’s never been this mad! ...He’s been this mad once.', peek: 92 },
-    { x: 470, alex: 'The hall runner! He won’t walk on it in his slippers!', peek: 600 },
-    { x: 790, alex: 'Mom’s Roomba! Jump it!', peek: 600 },
-    { x: 1290, throwType: 'ham', alex: 'He’s got the Easter ham! It’s October! JUMP!', peek: 1562 },
-    { x: 1700, throwType: 'remote', alex: 'The REMOTE! DUCK!', peek: 1562 },
-    { x: 2070, alex: slideHint, peek: 2232 },
-    { x: 2580, throwType: 'gravy', alex: 'GRAVY BOAT!', peek: 2232 },
-    { x: 2985, alex: 'Nobody’s allowed in here! Don’t touch the couch!', peek: 3482 },
-    { x: 3460, throwType: 'plate', alex: 'His commemorative plates! JUMP!', peek: 3482 },
-    { x: 3640, roar: true, alex: 'Smoke detectors again. That’s how you know it’s Thursday.', peek: 3482 },
+    { x: 250, alex: 'go' },
+    { x: 790, alex: 'up' },
+    { x: 1290, throwType: 'casserole', alex: 'up' },
+    { x: 1700, throwType: 'remote', alex: 'down' },
+    { x: 2070, alex: 'down' },
+    { x: 2580, throwType: 'gravy', alex: 'up' },
+    { x: 3460, throwType: 'plate', alex: 'up' },
+    { x: 3640, roar: true },
   ];
-  const PEEKS = { 92: 172, 600: 168, 1562: 168, 2232: 150, 3482: 176, 4402: 168 };
-  const BEAST_LINES = ['WHERE. IS. MY. GAME.', 'GARY. IS. WAITING.', 'ZACHARY.', 'COUCH. BOY.', 'I CLEARED. MY THURSDAY.', 'I CLEARED. MY FRIDAY.', 'OVER. A HAM.', 'UNRELIABLE.'];
-  const APOLOGIES = ['I’m so sorry, sir!', 'Sorry!', 'My bad!', 'Respectfully, sorry!', 'I can explain!', 'I’ll make you a NEW game!', 'Sorry about the recliner!', 'I’ll call Colby!', 'Sorry sorry sorry!'];
-  const REPLIES = ['NO.', 'DENIED.', 'APOLOGY. NOT. FOUND.', 'GARY. DOES NOT. ACCEPT.', 'WRONG. BUTTON.'];
+  const APOLOGIES = ['Sorry!', 'So sorry!', 'My bad!', 'Sorry, sir!'];
   const MISC_THROWS = ['tvguide', 'trophy', 'coaster'];
+
+  // Light sources, for the night-time lighting pass.
+  const LIGHTS = [
+    { x: 14, y: 172, r: 90, warm: true, blown: true },
+    { x: 430, y: 196, r: 84, warm: true },
+    { x: 892, y: 104, r: 64 },
+    { x: 1142, y: 114, r: 60 },
+    { x: 1305, y: 150, r: 54, warm: true },
+    { x: 1870, y: 168, r: 74, warm: true },
+    { x: 2224, y: 105, r: 64 },
+    { x: 2396, y: 180, r: 140, warm: true },
+    { x: 2746, y: 168, r: 64, warm: true },
+    { x: 3016, y: 138, r: 100, warm: true },
+    { x: 3426, y: 176, r: 56, warm: true },
+    { x: 3662, y: 103, r: 64 },
+    { x: 3940, y: 92, r: 80, warm: true },
+    { x: 4134, y: 140, r: 80, warm: true },
+    { x: 4531, y: 140, r: 84, warm: true },
+  ];
+  // Foreground silhouettes, nearer the camera than the action.
+  const FG = [];
+  for (let i = 0, x = 120; x < 6600; i++, x += 210 + ((i * 97) % 140)) FG.push({ x, kind: ['chair', 'plant', 'lamp', 'stool', 'plant', 'chair'][i % 6] });
+  const FG_PARALLAX = 1.35;
 
   // ================================================================ background
   let bg = null;
@@ -159,14 +174,19 @@
     R(g, 1790, FLOOR - 46, 20, 12, '#c9ced6');
     R(g, 1794, FLOOR - 49, 4, 3, C.ink);
     R(g, 1801, FLOOR - 49, 4, 3, C.ink);
-    R(g, 1880, FLOOR - 50, 16, 16, '#e5857f');
-    R(g, 1878, FLOOR - 36, 20, 2, '#f4f1ea');
+    // a pie cooling on the counter
+    R(g, 1878, FLOOR - 36, 22, 2, '#f4f1ea');
+    R(g, 1880, FLOOR - 41, 18, 5, '#c98a4a');
+    R(g, 1881, FLOOR - 43, 16, 2, '#e0a860');
+    R(g, 1884, FLOOR - 42, 1, 5, '#b8642a');
+    R(g, 1889, FLOOR - 42, 1, 5, '#b8642a');
+    R(g, 1894, FLOOR - 42, 1, 5, '#b8642a');
     paint.smokeDetector(g, 1500, TOP);
     // dining room
     paint.diningChair(g, 2060, FLOOR);
     paint.diningChair(g, 2090, FLOOR);
     paint.window(g, 2200, 70, 48, 70, { curtain: '#c9a24a', moon: true });
-    paint.frame(g, 2368, 76, 48, 34, 'easter');
+    paint.frame(g, 2368, 76, 48, 34, 'fruit');
     paint.diningChair(g, 2517, FLOOR);
     paint.chinaCabinet(g, 2556, FLOOR, 78);
     R(g, 2700, FLOOR - 40, 96, 6, C.woodL);
@@ -211,7 +231,42 @@
     bg = c;
   }
 
+  // ================================================================ small pixel pictures
+  // Alex's warnings. Drawn at 2x in a 12x10 grid so they read at a glance.
+  const ICONS = {
+    up: (P) => {
+      P(5, 1, 2, 1);
+      P(4, 2, 4, 1);
+      P(3, 3, 6, 1);
+      P(5, 4, 2, 5);
+    },
+    down: (P) => {
+      P(5, 1, 2, 5);
+      P(3, 6, 6, 1);
+      P(4, 7, 4, 1);
+      P(5, 8, 2, 1);
+    },
+    go: (P) => {
+      P(1, 4, 6, 2);
+      P(6, 2, 1, 6);
+      P(7, 3, 1, 4);
+      P(8, 4, 1, 2);
+      P(10, 1, 1, 5, '#d8433a');
+      P(10, 7, 1, 1, '#d8433a');
+    },
+    key: (P) => {
+      P(1, 4, 1, 2);
+      P(2, 3, 1, 4);
+      P(3, 2, 1, 6);
+      P(3, 4, 4, 2);
+      P(7, 3, 3, 4, C.brass);
+      P(8, 4, 1, 2, '#ffffff');
+      P(10, 4, 1, 1, C.brass);
+    },
+  };
+
   // ================================================================ the level
+  let lightCanvas = null;
   class Level {
     constructor(opts) {
       opts = opts || {};
@@ -220,28 +275,16 @@
       this.stats = { time: 0, hits: 0, deaths: 0, apologies: 0 };
       this.disksGot = new Set();
       this.checkpoint = 0;
-      this.loadCheckpoint(opts.checkpoint || 0, true);
+      this.t = 0;
+      this.loadCheckpoint(opts.checkpoint || 0);
     }
 
-    loadCheckpoint(idx, first) {
+    loadCheckpoint(idx) {
       this.checkpoint = idx;
       const room = ROOMS[idx];
       const startX = idx === 0 ? 150 : room.x0 + 50;
-      this.z = { x: startX, y: FLOOR, vx: 0, vy: 0, face: 1, onGround: true, ground: null, duck: false, slide: false, stun: 0, inv: 0, coyote: 0, jumpBuf: 0, h: 24, dropT: 0, dist: 0, locked: false, wasGround: true };
-      this.b = {
-        x: idx === 0 ? 30 : startX - 300,
-        face: 1,
-        state: idx === 0 ? 'hidden' : 'emerge',
-        t: idx === 0 ? 0 : 0.9,
-        slippers: true,
-        carpet: -1,
-        dist: 0,
-        throwCd: 0,
-        pending: null,
-        holding: null,
-        chatter: 6,
-        reply: 0,
-      };
+      this.z = { x: startX, y: FLOOR, vx: 0, vy: 0, face: 1, onGround: true, ground: null, duck: false, slide: false, stun: 0, inv: 0, coyote: 0, jumpBuf: 0, h: 24, dropT: 0, dist: 0, locked: false, sq: 0, sqType: '', dustT: 0 };
+      this.b = { x: idx === 0 ? 30 : startX - 300, face: 1, state: idx === 0 ? 'hidden' : 'emerge', t: idx === 0 ? 0 : 0.9, slippers: true, carpet: -1, dist: 0, throwCd: 0, pending: null, holding: null };
       CARPETS.forEach((c, i) => {
         if (this.b.x + 18 >= c.x0 && this.b.x - 16 < c.x1) {
           this.b.slippers = false;
@@ -259,16 +302,16 @@
       this.wallBlown = idx > 0;
       this.triggersDone = TRIGGERS.map((t) => t.x < startX);
       this.room = idx;
-      this.peek = null;
+      this.alex = null;
       this.hasKey = false;
       this.hasGift = false;
       this.wedged = false;
       this.unlocked = false;
       this.doorOpen = false;
-      this.slipperSaid = idx > 0;
-      this.lockedSaid = false;
+      this.slipperShown = idx > 0;
+      this.lockedSeen = false;
       this.lockCd = 0;
-      this.couchSaid = false;
+      this.lockPop = 0;
       this.smoke = 0;
       this.unlockT = 0;
       this.escaped = false;
@@ -278,12 +321,7 @@
       this.disks = DISKS.map((d, i) => Object.assign({ i, got: this.disksGot.has(i) }, d));
       this.keyGot = false;
       this.giftGot = false;
-      this.sorryCount = 0;
-      if (!first) {
-        ui.room.show(room.name, room.sub);
-      }
       ui.bubble.hide();
-      ui.callout.hide();
     }
 
     // -------------------------------------------------------------- helpers
@@ -303,11 +341,28 @@
       const box = { x: z.x - 5, y: z.y - 24, w: 10, h: 24 };
       return this.activeSolids().some((s) => EC.overlap(box, s));
     }
-    alexSay(text, peek, dur) {
-      if (typeof text === 'function') text = text();
-      ui.callout.show(text, dur || 3.4);
-      EC.audio.sfx.blip('alex');
-      if (peek != null) this.peek = { x: peek, t: dur || 3.4 };
+    // Alex pops up in the foreground and shouts a picture.
+    alexWarn(icon, dur) {
+      this.alex = { icon, t: dur || 1.8, dur: dur || 1.8 };
+      sfx.shout();
+    }
+    dust(x, y, n, dir) {
+      for (let i = 0; i < n; i++) {
+        this.parts.add({ x: x + EC.rand(-3, 3), y: y - 1, vx: EC.rand(-25, 25) - (dir || 0) * 30, vy: -EC.rand(8, 30), g: -15, life: EC.rand(0.35, 0.6), size: EC.pick([2, 2, 3]), color: EC.pick(['#cbbfa6', '#b9ab8f', '#a89a80']) });
+      }
+    }
+    stars(x, y) {
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2;
+        this.parts.add({ x, y, vx: Math.cos(a) * 45, vy: Math.sin(a) * 30 - 10, g: 30, life: 0.55, size: 2, color: i % 2 ? '#ffd23e' : '#ffffff' });
+      }
+    }
+    sparkle(x, y, colors) {
+      for (let i = 0; i < 12; i++) {
+        const a = (i / 12) * Math.PI * 2;
+        const s = EC.rand(40, 90);
+        this.parts.add({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, g: 40, life: EC.rand(0.4, 0.7), size: EC.pick([1, 2, 2]), color: EC.pick(colors) });
+      }
     }
 
     // -------------------------------------------------------------- start of the chase
@@ -322,23 +377,25 @@
       EC.fx.shake(6, 0.6);
       EC.fx.flash('#ffe0c0', 0.25);
       this.parts.burst(30, { x: 36, y: 150, g: 700, s0: 80, s1: 320, a0: -1.2, a1: 0.6, life: 1.6, sizes: [2, 3, 4], color: ['#56708b', '#4a6178', '#e2dac8', '#c6bca6', '#8a5a38'], floor: FLOOR + 6 });
+      this.dust(40, FLOOR, 10, -1);
     }
 
     // -------------------------------------------------------------- update
     update(dt, mode) {
       const z = this.z;
       const b = this.b;
+      this.t += dt;
       this.stats.time += mode === 'play' ? dt : 0;
       this.parts.update(dt);
-      ui.callout.update(dt);
-      ui.room.update(dt);
       ui.bubble.update(dt);
-      if (this.peek) {
-        this.peek.t -= dt;
-        if (this.peek.t <= 0) this.peek = null;
+      if (this.alex) {
+        this.alex.t -= dt;
+        if (this.alex.t <= 0) this.alex = null;
       }
       if (this.smoke > 0) this.smoke -= dt;
       this.lockCd = Math.max(0, this.lockCd - dt);
+      this.lockPop = Math.max(0, this.lockPop - dt);
+      z.sq = Math.max(0, z.sq - dt);
 
       if (mode === 'play' || mode === 'tutorial') this.updateZach(dt, mode);
       if (mode === 'play' || mode === 'caught') this.updateBeast(dt);
@@ -352,10 +409,8 @@
         this.checkHazards();
         if (!this.caught && !this.escaped && b.state !== 'hidden' && EC.overlap(this.zbox(), this.bbox())) this.getCaught();
       }
-      if (this.caught) {
-        this.caughtT += dt;
-      }
-      // camera
+      if (this.caught) this.caughtT += dt;
+      // camera: a little look-ahead, and widen to keep him in frame when he's close
       let lead = z.face > 0 ? 190 : 290;
       if (z.face > 0 && b.state !== 'hidden' && z.x - b.x < 260) lead = EC.clamp(z.x - b.x + 40, 190, 270);
       const target = EC.clamp(z.x - lead, 0, LEVEL_W - EC.W);
@@ -421,7 +476,10 @@
           z.onGround = false;
           z.duck = z.slide = false;
           z.h = 24;
+          z.sq = 0.12;
+          z.sqType = 'jump';
           sfx.jump();
+          this.dust(z.x, z.y, 3, z.face);
         }
       }
       if (!inp.held.jump && z.vy < -150) z.vy = -150;
@@ -446,6 +504,7 @@
 
       // move y
       const prevBottom = z.y;
+      const fallSpeed = z.vy;
       z.y += z.vy * dt;
       const was = z.onGround;
       z.onGround = false;
@@ -481,7 +540,7 @@
         z.onGround = true;
         z.ground = null;
       }
-      // stairs: walk up steps without jumping
+      // stairs: once you're on them, walk up without jumping
       if (z.onGround && z.vx > 0 && z.ground && z.ground.step) {
         for (const p of PLATFORMS) {
           if (!p.step) continue;
@@ -494,29 +553,32 @@
       if (was && !z.onGround && z.vy >= 0) z.coyote = 0.09;
       if (!was && z.onGround) {
         sfx.land();
+        if (fallSpeed > 200) {
+          z.sq = 0.12;
+          z.sqType = 'land';
+          this.dust(z.x, z.y, 5, 0);
+        }
         if (z.ground && z.ground.slippery) {
           z.vx = EC.clamp(z.vx + 80 * z.face, -300, 300);
           sfx.squeak();
-          if (!this.couchSaid) {
-            this.couchSaid = true;
-            this.alexSay('...You touched the couch. The plastic is there for a reason.', 3482);
-          }
         }
       }
       if (onSlippery && Math.abs(z.vx) > 40 && Math.random() < dt * 3) sfx.squeak();
-      if (z.onGround) z.dist += Math.abs(z.vx) * dt;
-      z.wasGround = z.onGround;
+      // a puff of dust from the heels when running, a trail when sliding
+      if (z.onGround) {
+        z.dist += Math.abs(z.vx) * dt;
+        z.dustT -= dt;
+        if (z.dustT <= 0 && (z.slide || Math.abs(z.vx) > 170)) {
+          z.dustT = z.slide ? 0.05 : 0.14;
+          this.dust(z.x - z.face * 4, z.y, 1, z.face);
+        }
+      }
     }
 
     apologize() {
-      const z = this.z;
       this.stats.apologies++;
-      this.sorryCount++;
-      ui.bubble.say('zach', EC.pick(APOLOGIES), 1.3);
+      ui.bubble.say(EC.pick(APOLOGIES), 0.85);
       [0, 0.07, 0.14].forEach((d) => setTimeout(() => sfx.blip('zach'), d * 1000));
-      if (this.b.state !== 'hidden' && this.beastOnScreen()) this.b.reply = 0.55;
-      if (this.sorryCount === 10) this.alexSay('Babe. Stop apologizing. It does nothing.', null, 3);
-      return z;
     }
 
     beastOnScreen() {
@@ -536,11 +598,13 @@
       }
       if (this.lockCd > 0) return;
       this.lockCd = 1.6;
+      this.lockPop = 1.2;
       sfx.rattle();
-      ui.bubble.say('zach', 'LOCKED?!', 1.2);
-      if (!this.lockedSaid) {
-        this.lockedSaid = true;
-        this.alexSay('The key! It’s on the hall table, right next to Theo’s gift! Behind you!', 4402, 4.2);
+      sfx.lock();
+      EC.fx.shake(1.5, 0.15);
+      if (!this.lockedSeen) {
+        this.lockedSeen = true;
+        this.alexWarn('key', 3.2);
       }
     }
 
@@ -549,15 +613,10 @@
       const b = this.b;
       const z = this.z;
       b.throwCd = Math.max(0, b.throwCd - dt);
-      if (b.reply > 0) {
-        b.reply -= dt;
-        if (b.reply <= 0) ui.bubble.say('beast', EC.pick(REPLIES), 1.3);
-      }
       const room = ROOMS[this.room];
       const dist = z.x - b.x;
       switch (b.state) {
         case 'hidden':
-          return;
         case 'grab':
           return;
         case 'emerge':
@@ -620,9 +679,9 @@
                 b.state = 'off';
                 b.t = 1.1;
                 sfx.pat();
-                if (!this.slipperSaid) {
-                  this.slipperSaid = true;
-                  this.alexSay('He’s taking his slippers off. He’s lining them up. GO!', null, 2.8);
+                if (!this.slipperShown && this.beastOnScreen()) {
+                  this.slipperShown = true;
+                  this.alexWarn('go', 1.6);
                 }
                 return;
               }
@@ -641,14 +700,14 @@
             b.t = 3.4;
             EC.fx.shake(3, 0.4);
             sfx.smash();
-            this.alexSay('He’s stuck in the doorframe! Dad never fixed that doorframe!', null, 3.2);
+            this.alexWarn('go', 1.6);
             return;
           }
           // throws
           const elevated = z.y < FLOOR - 20;
           if (b.pending && dist < 340 && dist > 60 && b.throwCd <= 0) {
             b.holding = b.pending.type;
-            if (b.pending.alex) this.alexSay(b.pending.alex, b.pending.peek, 2.6);
+            if (b.pending.alex) this.alexWarn(b.pending.alex, 1.5);
             b.pending = null;
             b.state = 'windup';
             b.t = 0.6;
@@ -660,7 +719,6 @@
             b.t = 0.55;
             return;
           }
-          // move
           // He stays just behind you: a sprint when he's far, a lumber when he's close.
           let speed = room.beast;
           if (!room.noSprint || b.x < room.x0) {
@@ -695,12 +753,6 @@
           for (const s of this.solids) {
             if (s.active && s.kick && EC.overlap(bb, s)) this.kick(s);
           }
-          // chatter
-          b.chatter -= dt;
-          if (b.chatter <= 0 && this.beastOnScreen()) {
-            b.chatter = EC.rand(6, 9);
-            ui.bubble.say('beast', EC.pick(BEAST_LINES), 1.5);
-          }
           // footsteps
           const step = Math.floor(b.dist / 22);
           if (step !== b.lastStep) {
@@ -708,6 +760,7 @@
             if (this.beastOnScreen()) {
               sfx.stomp();
               EC.fx.shake(b.slippers ? 1 : 0.5, 0.08);
+              this.dust(b.x + 8, FLOOR, 3, -1);
             }
           }
           break;
@@ -720,6 +773,7 @@
       sfx.smash();
       EC.fx.shake(5, 0.4);
       this.parts.burst(26, { x, y: 140, g: 700, s0: 60, s1: 260, a0: -2.6, a1: -0.3, life: 1.6, sizes: [2, 3, 4], color: ['#efe7d6', '#c9bfa9', '#8a5a38', '#5a3419'], floor: FLOOR + 4 });
+      this.dust(x, FLOOR, 8, 0);
     }
 
     kick(s) {
@@ -728,6 +782,7 @@
       EC.fx.shake(3, 0.2);
       const spr = art.prop(s.spr);
       this.parts.add({ spr, x: s.x + s.w / 2, y: s.y + s.h / 2, vx: EC.rand(200, 320), vy: -EC.rand(240, 320), g: 900, life: 1.4, vr: EC.rand(6, 12) });
+      this.dust(s.x + s.w / 2, FLOOR, 6, -1);
     }
 
     throwThing(type) {
@@ -736,7 +791,7 @@
       const hand = art.beastHand.fwd;
       const x = b.x + hand[0];
       const y = FLOOR + hand[1];
-      const p = { type, x, y, vx: 0, vy: 0, g: 0, rot: 0, vr: 0, w: 10, h: 8, dead: false, life: 4, bounces: 0 };
+      const p = { type, x, y, vx: 0, vy: 0, g: 0, rot: 0, vr: 0, w: 10, h: 8, dead: false, life: 4 };
       sfx.whoosh();
       if (type === 'remote') {
         p.y = FLOOR - 19;
@@ -760,8 +815,8 @@
         p.vx = (tx - x) / T;
         p.vy = (ty - y - 0.5 * p.g * T * T) / T;
         p.vr = 9;
-        p.w = type === 'ham' ? 14 : 10;
-        p.h = type === 'ham' ? 9 : 8;
+        p.w = type === 'casserole' ? 14 : 10;
+        p.h = 8;
       }
       this.projectiles.push(p);
     }
@@ -781,6 +836,7 @@
             p.dead = true;
             p.life = Math.min(p.life, 1.2);
             sfx.land();
+            this.dust(p.x, FLOOR, 4, 0);
           }
           p.vy *= -0.35;
           p.vx *= 0.45;
@@ -789,7 +845,7 @@
         if (!p.dead && !this.caught && !this.escaped) {
           const pb = { x: p.x - p.w / 2 + 1, y: p.y - p.h / 2 + 1, w: p.w - 2, h: p.h - 2 };
           if (EC.overlap(pb, zb) && this.z.inv <= 0) {
-            this.hitZach(p.type);
+            this.hitZach();
             p.dead = true;
             p.vx = -p.vx * 0.3;
             p.vy = -160;
@@ -801,7 +857,7 @@
       });
     }
 
-    hitZach(type) {
+    hitZach() {
       const z = this.z;
       this.stats.hits++;
       z.stun = 0.35;
@@ -813,8 +869,7 @@
       z.h = 24;
       sfx.hit();
       EC.fx.shake(3, 0.2);
-      const lines = { ham: 'HAM?!', remote: 'OW, THE REMOTE!', plate: 'MY SHINS!', gravy: 'GRAVY?!', tvguide: 'OOF!', trophy: 'OOF!', coaster: 'OW!' };
-      ui.bubble.say('zach', lines[type] || 'OOF!', 1.1);
+      this.stars(z.x, z.y - 28);
     }
 
     updateRoomba(dt) {
@@ -842,7 +897,7 @@
         z.vx *= 0.3;
         this.stats.hits++;
         sfx.bonk();
-        ui.bubble.say('zach', 'OW! CHANDELIER!', 1.1);
+        this.stars(z.x, z.y - z.h - 2);
         return;
       }
       const r = this.roomba;
@@ -854,7 +909,8 @@
         z.onGround = false;
         this.stats.hits++;
         sfx.trip();
-        ui.bubble.say('zach', 'WHOA!', 1);
+        this.stars(z.x, z.y - 26);
+        this.dust(z.x, FLOOR, 4, z.face);
       }
     }
 
@@ -864,7 +920,6 @@
       for (let i = 0; i < ROOMS.length; i++) if (z.x >= ROOMS[i].x0 + 24 && z.x < ROOMS[i].x1 + 24) idx = i;
       if (idx > this.room) {
         this.room = idx;
-        ui.room.show(ROOMS[idx].name, ROOMS[idx].sub);
         if (idx > this.checkpoint) this.checkpoint = idx;
       }
     }
@@ -875,9 +930,9 @@
         if (this.triggersDone[i] || z.x < t.x) return;
         this.triggersDone[i] = true;
         if (t.throwType) {
-          this.b.pending = { type: t.throwType, alex: t.alex, peek: t.peek };
+          this.b.pending = { type: t.throwType, alex: t.alex };
           if (this.b.state === 'chase' && this.b.throwCd > 0) this.b.throwCd = 0;
-        } else if (t.alex) this.alexSay(t.alex, t.peek);
+        } else if (t.alex) this.alexWarn(t.alex);
         if (t.roar) {
           const b = this.b;
           if (b.state === 'chase') {
@@ -888,7 +943,6 @@
           EC.fx.shake(5, 1);
           this.smoke = 4.5;
           sfx.beeps(10, 0.34);
-          ui.bubble.say('beast', 'WHERE. IS. MY. GAME.', 1.8);
         }
       });
     }
@@ -901,23 +955,20 @@
           d.got = true;
           this.disksGot.add(d.i);
           sfx.disk();
-          const n = this.disksGot.size;
-          ui.bubble.say('zach', n === DISKS.length ? 'THE WHOLE GAME!' : 'A backup! ' + n + '/' + DISKS.length, 1.4);
-          this.parts.burst(10, { x: d.x, y: d.y, g: 0, s0: 30, s1: 80, life: 0.5, size: 2, color: ['#7fd7ff', '#ffffff'] });
-          if (n === 1) this.alexSay('Is that... an Eddie’s Couch backup disk? Grab every one you see!', null, 3.4);
+          sfx.sparkle();
+          this.sparkle(d.x, d.y, ['#7fd7ff', '#ffffff', '#3f7fd9']);
         }
       }
       if (!this.keyGot && EC.overlap(zb, { x: KEY.x - 9, y: KEY.y - 6, w: 18, h: 10 })) {
         this.keyGot = this.hasKey = true;
         sfx.key();
-        ui.bubble.say('zach', 'KEY!', 1.1);
-        if (this.lockedSaid) this.alexSay('You got it! The door! GO GO GO!', null, 2.4);
+        this.sparkle(KEY.x, KEY.y, ['#ffd23e', '#ffffff', C.brass]);
+        if (this.lockedSeen) this.alexWarn('go', 1.6);
       }
       if (!this.giftGot && EC.overlap(zb, { x: GIFT.x - 7, y: GIFT.y - 7, w: 14, h: 14 })) {
         this.giftGot = this.hasGift = true;
         sfx.gift();
-        ui.bubble.say('zach', 'Theo’s gift!', 1.1);
-        this.alexSay('You got Theo’s gift! It’s heavy. It’s a cast-iron skillet.', null, 3);
+        this.sparkle(GIFT.x, GIFT.y, ['#d8433a', '#ffd23e', '#ffffff']);
       }
     }
 
@@ -928,17 +979,17 @@
       this.stats.deaths++;
       b.state = 'grab';
       this.z.vx = this.z.vy = 0;
+      this.alex = null;
       sfx.roar(1.2);
       sfx.hit();
       EC.fx.shake(6, 0.6);
       EC.fx.flash('#ff2b2b', 0.4);
-      ui.bubble.say('beast', 'GOTCHA. ZACHARY.', 1.6);
-      ui.callout.hide();
+      ui.bubble.hide();
     }
 
     // Unlocking, then out the door.
     updateEscape(dt) {
-      if (!this.unlocked || this.escaped) return false;
+      if (!this.unlocked || this.escaped) return;
       const z = this.z;
       if (this.unlockT > 0) {
         this.unlockT -= dt;
@@ -947,16 +998,12 @@
           this.doorOpen = true;
           z.locked = false;
         }
-        return false;
+        return;
       }
       z.face = 1;
       z.x += RUN * 1.1 * dt;
       z.dist += RUN * dt;
-      if (z.x > DOOR_X + 30) {
-        this.escaped = true;
-        return true;
-      }
-      return false;
+      if (z.x > DOOR_X + 30) this.escaped = true;
     }
 
     // -------------------------------------------------------------- drawing
@@ -966,13 +1013,62 @@
       const S = EC.S;
       const cam = Math.round(this.cam * S) / S;
       const [ox, oy] = EC.fx.offset();
+      const t = this.t;
       g.fillStyle = '#000';
       g.fillRect(0, 0, EC.W, EC.H);
+      g.save();
+      // caught: the camera pushes in on his fist
+      if (this.caught) {
+        const k = EC.ease.out(Math.min(1, this.caughtT / 0.6));
+        const fx = b.x + 34 - cam;
+        const fy = FLOOR - 50;
+        g.translate(fx, fy);
+        g.scale(1 + 0.7 * k, 1 + 0.7 * k);
+        g.translate(-fx, -fy);
+      }
       g.drawImage(bg, cam, 0, EC.W, EC.H, ox, oy, EC.W, EC.H);
       g.save();
       g.translate(-cam + ox, oy);
+      this.drawWorld(g, cam, t);
+      g.restore();
+      this.drawLighting(g, cam, ox, oy);
+      g.restore();
 
-      // the wall he came through
+      if (!this.caught) this.drawForeground(g, cam);
+      // smoke alarm
+      if (this.smoke > 0 && Math.floor(this.smoke * 3) % 2 === 0) {
+        g.globalAlpha = EC.reducedMotion ? 0.07 : 0.14;
+        g.fillStyle = '#ff2b2b';
+        g.fillRect(0, 0, EC.W, EC.H);
+        g.globalAlpha = 1;
+      }
+      // he's close: the left edge goes red
+      const dist = z.x - b.x;
+      if (b.state !== 'hidden' && dist < 130 && !this.escaped && !this.caught) {
+        const a = (1 - dist / 130) * 0.5;
+        const grd = g.createLinearGradient(0, 0, 130, 0);
+        grd.addColorStop(0, 'rgba(255,30,30,' + a + ')');
+        grd.addColorStop(1, 'rgba(255,30,30,0)');
+        g.fillStyle = grd;
+        g.fillRect(0, 0, 130, EC.H);
+      }
+      this.drawOffscreenBeast(g, cam, t);
+      this.drawAlex(g, t);
+      if (this.caught) {
+        g.globalAlpha = Math.min(0.55, this.caughtT * 0.5);
+        g.fillStyle = '#2a0003';
+        g.fillRect(0, 0, EC.W, EC.H);
+        g.globalAlpha = 1;
+      }
+      EC.fx.drawFlash(g);
+      ui.bubble.place(z.x - cam, z.y - z.h - 10);
+      ui.rec(b.state !== 'hidden' && z.x - b.x < 700 && !this.escaped);
+    }
+
+    drawWorld(g, cam, t) {
+      const z = this.z;
+      const b = this.b;
+      // the wall he came through, with the living room's light behind it
       if (this.wallBlown) {
         R(g, 2, 112, 44, FLOOR - 112, '#140d10');
         R(g, 0, 118, 30, FLOOR - 118, '#3a2418');
@@ -990,15 +1086,6 @@
         R(g, x - 18, FLOOR - 9, 8, 3, '#8a5a38');
         R(g, x + 10, FLOOR - 8, 10, 2, '#efe7d6');
       });
-
-      // Alex, hiding
-      if (this.peek && PEEKS[this.peek.x] != null) {
-        const py = PEEKS[this.peek.x];
-        const k = Math.min(1, (3.4 - this.peek.t) * 4, this.peek.t * 4);
-        art.put(g, art.alex('peek'), this.peek.x + 2, py + 8 + (1 - k) * 4, { alpha: Math.max(0, k) });
-        art.put(g, art.hat('alex'), this.peek.x + 3, py - 4 + (1 - k) * 4, { rot: 0.25, alpha: Math.max(0, k) });
-      }
-
       // lane furniture
       for (const s of this.solids) {
         if (!s.active || !s.spr) continue;
@@ -1013,12 +1100,14 @@
         R(g, door.x, FLOOR - 20, door.w + 4, 20, '#1d2a1a');
         art.glow(g, door.x + 12, door.y + 20, 30, 'rgba(255,214,140,0.45)');
         art.put(g, art.frontDoor(true), door.x - 2, FLOOR);
-      } else art.put(g, art.frontDoor(false), door.x + door.w / 2, FLOOR);
+      } else {
+        const rattle = this.lockPop > 0.9 ? Math.round(EC.rand(-1, 1)) : 0;
+        art.put(g, art.frontDoor(false), door.x + door.w / 2 + rattle, FLOOR);
+      }
       art.put(g, art.chandelier(), CHANDELIER.x + CHANDELIER.w / 2, CHANDELIER.y + CHANDELIER.h);
       R(g, CHANDELIER.x + 19, TOP, 2, CHANDELIER.y - TOP, C.brassS);
 
       // pickups
-      const t = performance.now() / 1000;
       for (const d of this.disks) {
         if (d.got) continue;
         const bob = Math.round(Math.sin(t * 3 + d.i) * 1.5);
@@ -1027,48 +1116,151 @@
       }
       if (!this.keyGot) {
         art.put(g, art.prop('key'), KEY.x, KEY.y);
-        if (this.lockedSaid || Math.floor(t * 1.5) % 2 === 0) art.glow(g, KEY.x + 2, KEY.y - 2, this.lockedSaid ? 10 : 5, 'rgba(255,230,140,0.9)', 0.8);
+        if (this.lockedSeen) {
+          // after the door says no, the key calls to you
+          const p = 0.6 + Math.sin(t * 6) * 0.4;
+          art.glow(g, KEY.x + 2, KEY.y - 2, 16, 'rgba(255,230,140,0.95)', p);
+          R(g, KEY.x - 1, KEY.y - 14 - Math.round(Math.sin(t * 5) * 2), 3, 5, C.brass);
+          R(g, KEY.x - 2, KEY.y - 10 - Math.round(Math.sin(t * 5) * 2), 5, 1, C.brass);
+          R(g, KEY.x - 1, KEY.y - 9 - Math.round(Math.sin(t * 5) * 2), 3, 1, C.brass);
+        } else if (Math.floor(t * 1.5) % 2 === 0) art.glow(g, KEY.x + 2, KEY.y - 2, 5, 'rgba(255,230,140,0.9)', 0.8);
       }
       if (!this.giftGot) art.put(g, art.prop('gift'), GIFT.x, GIFT.y + 7);
-
+      // a padlock pops over the door when it won't open
+      if (this.lockPop > 0) {
+        const lx = door.x + door.w / 2;
+        const ly = door.y + 30 - Math.min(1, (1.2 - this.lockPop) * 6) * 8;
+        R(g, lx - 5, ly - 4, 10, 9, C.ink);
+        R(g, lx - 4, ly - 3, 8, 7, C.brass);
+        R(g, lx - 4, ly - 10, 8, 7, C.ink);
+        R(g, lx - 3, ly - 9, 6, 6, C.metal);
+        R(g, lx - 2, ly - 8, 4, 5, C.ink);
+        R(g, lx - 1, ly - 1, 2, 3, C.ink);
+      }
       // roomba
       if (this.roomba.active) art.put(g, art.prop('roomba'), this.roomba.x, FLOOR, { flip: this.roomba.dir < 0 });
-
-      // the beast
+      // the beast, then zach
       if (b.state !== 'hidden') this.drawBeast(g, t);
-      // zach
       if (!this.escaped) this.drawZach(g, t);
-
       // thrown things
       for (const p of this.projectiles) art.put(g, art.prop(p.type), p.x, p.y, { rot: p.rot, alpha: p.dead ? Math.min(1, p.life * 2) : 1 });
       this.parts.draw(g, 0);
-      g.restore();
+    }
 
-      // smoke alarm
-      if (this.smoke > 0 && Math.floor(this.smoke * 3) % 2 === 0) {
-        g.globalAlpha = EC.reducedMotion ? 0.07 : 0.14;
-        g.fillStyle = '#ff2b2b';
-        g.fillRect(0, 0, EC.W, EC.H);
-        g.globalAlpha = 1;
+    // Night-time: the house is dark except where the lamps are.
+    drawLighting(g, cam, ox, oy) {
+      if (!lightCanvas) lightCanvas = art.canvasOf(EC.W, EC.H);
+      const L = lightCanvas.getContext('2d');
+      const z = this.z;
+      const b = this.b;
+      L.globalCompositeOperation = 'source-over';
+      L.clearRect(0, 0, EC.W, EC.H);
+      L.fillStyle = 'rgba(14,8,32,0.42)';
+      L.fillRect(0, 0, EC.W, EC.H);
+      L.globalCompositeOperation = 'destination-out';
+      const hole = (x, y, r, s) => {
+        if (x + r < 0 || x - r > EC.W) return;
+        const grd = L.createRadialGradient(x, y, 0, x, y, r);
+        grd.addColorStop(0, 'rgba(0,0,0,' + s + ')');
+        grd.addColorStop(1, 'rgba(0,0,0,0)');
+        L.fillStyle = grd;
+        L.fillRect(x - r, y - r, r * 2, r * 2);
+      };
+      const warm = [];
+      for (const l of LIGHTS) {
+        if (l.blown && !this.wallBlown) continue;
+        hole(l.x - cam, l.y, l.r, 0.95);
+        if (l.warm) warm.push(l);
       }
-      // danger vignette
-      const dist = z.x - b.x;
-      if (b.state !== 'hidden' && dist < 120 && !this.escaped) {
-        const a = (1 - dist / 120) * 0.5;
-        const grd = g.createLinearGradient(0, 0, 120, 0);
-        grd.addColorStop(0, 'rgba(255,30,30,' + a + ')');
-        grd.addColorStop(1, 'rgba(255,30,30,0)');
-        g.fillStyle = grd;
-        g.fillRect(0, 0, 120, EC.H);
+      if (this.doorOpen) {
+        hole(DOOR_X + 12 - cam, FLOOR - 50, 110, 1);
+        warm.push({ x: DOOR_X + 12, y: FLOOR - 50, r: 110 });
       }
-      if (this.caught) {
-        g.globalAlpha = Math.min(0.6, this.caughtT * 0.6);
-        g.fillStyle = '#2a0003';
-        g.fillRect(0, 0, EC.W, EC.H);
-        g.globalAlpha = 1;
+      hole(z.x - cam, z.y - 14, 60, 0.7);
+      if (b.state !== 'hidden') hole(b.x + 26 - cam, FLOOR - 70, 50, 0.5);
+      L.globalCompositeOperation = 'source-over';
+      g.save();
+      g.imageSmoothingEnabled = true;
+      g.drawImage(lightCanvas, ox, oy);
+      g.restore();
+      for (const l of warm) {
+        const x = l.x - cam + ox;
+        if (x + l.r < 0 || x - l.r > EC.W) continue;
+        art.glow(g, x, l.y + oy, l.r * 0.55, 'rgba(255,180,100,0.16)');
       }
-      EC.fx.drawFlash(g);
-      this.placeOverlays(cam);
+      // the beast's eyes throw red light on the wall behind him
+      if (b.state !== 'hidden') art.glow(g, b.x + 26 - cam + ox, FLOOR - 70 + oy, 46, 'rgba(255,40,40,0.18)');
+    }
+
+    // Dark shapes close to the camera, sliding by faster than the room.
+    drawForeground(g, cam) {
+      g.fillStyle = '#0b070a';
+      const off = cam * FG_PARALLAX;
+      for (const f of FG) {
+        const x = Math.round(f.x - off);
+        if (x < -80 || x > EC.W + 20) continue;
+        const B = EC.H;
+        if (f.kind === 'chair') {
+          g.fillRect(x + 2, B - 20, 52, 20);
+          g.fillRect(x + 5, B - 23, 46, 3);
+          g.fillRect(x + 10, B - 25, 36, 2);
+        } else if (f.kind === 'plant') {
+          g.fillRect(x + 6, B - 12, 18, 12);
+          g.fillRect(x + 4, B - 14, 22, 2);
+          [[-6, -22, 12, 4], [12, -24, 14, 4], [4, -30, 6, 16], [16, -18, 10, 3], [-2, -17, 9, 3]].forEach(([dx, dy, w, h]) => g.fillRect(x + 6 + dx, B + dy, w, h));
+        } else if (f.kind === 'lamp') {
+          g.fillRect(x + 10, B - 10, 4, 10);
+          g.fillRect(x + 2, B - 4, 20, 4);
+        } else {
+          g.fillRect(x, B - 14, 30, 6);
+          g.fillRect(x + 3, B - 8, 4, 8);
+          g.fillRect(x + 23, B - 8, 4, 8);
+        }
+      }
+    }
+
+    // When he's behind you and off the screen, his eyes are at the edge of it.
+    drawOffscreenBeast(g, cam, t) {
+      const b = this.b;
+      if (b.state === 'hidden' || this.escaped || this.caught) return;
+      const right = b.x + 30 - cam;
+      if (right > 0) return;
+      const dist = this.z.x - b.x;
+      const k = EC.clamp(1 - (dist - 120) / 320, 0.2, 1);
+      const y = FLOOR - 70 + Math.sin(t * 2) * 2;
+      const blink = Math.floor(t * 3.3) % 9 === 0;
+      if (!blink) {
+        art.glow(g, 6, y, 14 + 8 * k, 'rgba(255,40,40,0.9)', 0.35 + 0.5 * k);
+        R(g, 3, y - 1, 3, 2, C.eye);
+        R(g, 9, y - 1, 3, 2, C.eye);
+      }
+    }
+
+    // Alex, ducked behind an armchair close to the camera, shouting a picture.
+    drawAlex(g, t) {
+      const a = this.alex;
+      if (!a) return;
+      const k = Math.min(1, (a.dur - a.t) * 7, a.t * 7);
+      const bx = EC.W - 30;
+      const by = EC.H - 4 + (1 - k) * 40;
+      art.put(g, art.alex('peek'), bx, by, { sx: 2, sy: 2, flip: true });
+      g.fillStyle = '#0b070a';
+      g.fillRect(EC.W - 64, EC.H - 12, 64, 12);
+      g.fillRect(EC.W - 61, EC.H - 14, 58, 2);
+      if (k < 0.6) return;
+      // the shout
+      const shake = a.dur - a.t < 0.5 ? Math.round(Math.sin(t * 60)) : 0;
+      const w = 12;
+      const h = 10;
+      const ix = EC.W - 66 - w * 2 + shake;
+      const iy = EC.H - 34;
+      R(g, ix - 1, iy - 1, w * 2 + 2, h * 2 + 2, C.ink);
+      R(g, ix, iy, w * 2, h * 2, '#fffaf0');
+      R(g, ix + w * 2, iy + 12, 4, 4, '#fffaf0');
+      R(g, ix + w * 2 + 1, iy + 11, 4, 1, C.ink);
+      R(g, ix + w * 2 + 4, iy + 12, 1, 4, C.ink);
+      const P = (x, y, ww, hh, col) => R(g, ix + x * 2, iy + y * 2, ww * 2, hh * 2, col || C.ink);
+      ICONS[a.icon](P);
     }
 
     drawZach(g, t) {
@@ -1089,7 +1281,20 @@
         pose = 'walk';
         frame = Math.floor(z.dist / 7);
       } else if (this.b.state !== 'hidden') pose = 'worry';
-      art.put(g, art.zach(pose, frame), z.x, z.y, { flip: z.face < 0 });
+      // squash and stretch
+      let sx = 1;
+      let sy = 1;
+      if (z.sq > 0) {
+        const k = z.sq / 0.12;
+        if (z.sqType === 'jump') {
+          sx = 1 - 0.14 * k;
+          sy = 1 + 0.16 * k;
+        } else {
+          sx = 1 + 0.22 * k;
+          sy = 1 - 0.2 * k;
+        }
+      }
+      art.put(g, art.zach(pose, frame), z.x, z.y, { flip: z.face < 0, sx, sy });
       if (this.hasGift && pose !== 'duck' && pose !== 'slide') art.put(g, art.prop('gift'), z.x + 8 * z.face, z.y - 9);
       if (this.unlockT > 0 && Math.floor(t * 12) % 2) art.put(g, art.prop('key'), z.x + 9, z.y - 16);
     }
@@ -1145,18 +1350,15 @@
       art.glow(g, b.x + eye[0] + jitter, FLOOR + eye[1], 10, 'rgba(255,43,43,0.95)', 0.75 + Math.sin(t * 9) * 0.2);
     }
 
-    placeOverlays(cam) {
-      const z = this.z;
-      const b = this.b;
-      ui.bubble.place('zach', z.x - cam, z.y - z.h - 10);
-      ui.bubble.place('beast', b.x + 20 - cam, FLOOR - 92);
-      const off = b.state !== 'hidden' && b.x + 30 < cam && !this.escaped && !this.caught;
-      ui.meter.set(off ? '◀ ' + Math.max(1, Math.round((z.x - b.x) / 18)) + ' FT' : null);
-      ui.rec(b.state !== 'hidden' && z.x - b.x < 700 && !this.escaped);
-    }
-
     hudState() {
-      return { disks: this.disksGot.size, disksTotal: DISKS.length, key: this.hasKey, gift: this.hasGift, running: EC.input.running(), time: this.stats.time };
+      return { disks: this.disksGot.size, disksTotal: DISKS.length, key: this.hasKey, gift: this.hasGift, time: this.stats.time };
+    }
+    // Where to centre the iris wipe, in screen pixels.
+    focus() {
+      return { x: this.z.x - this.cam, y: this.z.y - 14 };
+    }
+    doorFocus() {
+      return { x: DOOR_X + 12 - this.cam, y: FLOOR - 40 };
     }
   }
 
