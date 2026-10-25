@@ -608,16 +608,14 @@
       if (!on) hudPrev = null;
     },
     set(s) {
-      $('hud-disks').textContent = s.disks + '/' + s.disksTotal;
       $('hud-key').classList.toggle('off', !s.key);
       $('hud-gift').classList.toggle('off', !s.gift);
       $('hud-time').textContent = EC.fmtTime(s.time);
       if (hudPrev) {
-        if (s.disks > hudPrev.disks) pulse($('hud-disks').parentNode);
         if (s.key && !hudPrev.key) pulse($('hud-key'));
         if (s.gift && !hudPrev.gift) pulse($('hud-gift'));
       }
-      hudPrev = { disks: s.disks, key: s.key, gift: s.gift };
+      hudPrev = { key: s.key, gift: s.gift };
     },
   };
 

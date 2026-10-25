@@ -609,7 +609,7 @@
       zach: { x: 216, y: 196, face: 1, pose: 'hurt', rot: 0, visible: true, gift: false, casserole: false },
       mom: null,
       toss: null,
-      grave: { wob: 0, disk: null },
+      grave: { wob: 0 },
       cam: { x: EC.W / 2, y: EC.H / 2, z: 1 },
       black: 1,
       parts: new EC.Particles(),
@@ -693,7 +693,6 @@
     art.put(g, art.prop('headstone'), GX, GY);
     art.put(g, art.prop('casserole'), GX + 25, GY - 4);
     art.put(g, art.hat('brandon'), GX + 4, GY - 25, { rot: 0.22 + Math.sin(E.t * 26) * (gr.wob || 0) });
-    if (gr.disk) art.put(g, art.prop('disk'), gr.disk.x, gr.disk.y, { rot: gr.disk.rot });
     // zach
     const z = E.zach;
     if (z && z.visible) {
@@ -1205,20 +1204,6 @@
     sfx.crickets();
     yield 1.6;
     yield* say(cs, 'zach', '...Oh.', { speed: 8 });
-    if ((info.disks || 0) >= info.disksTotal) {
-      // Every backup made it out. He leaves one with Brandon.
-      zz.pose = 'sorry';
-      yield 0.5;
-      const d = (S.grave.disk = { x: zz.x + 8, y: zz.y - 14, rot: 0 });
-      cs.tween(d, { x: GX - 8, y: GY - 5, rot: -0.25 }, 0.6, EC.ease.inOut);
-      yield 0.65;
-      sfx.pat();
-      yield 0.25;
-      sfx.pat();
-      yield 0.5;
-      zz.pose = 'down';
-      yield 0.8;
-    }
     // The porch light comes on again.
     S.porch = 1;
     sfx.click();

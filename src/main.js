@@ -105,7 +105,7 @@
   function updatePlay(dt) {
     level.update(dt, 'play');
     const h = level.hudState();
-    const key = [h.disks, h.key, h.gift, Math.floor(h.time)].join('|');
+    const key = [h.key, h.gift, Math.floor(h.time)].join('|');
     if (key !== hudKey) {
       hudKey = key;
       ui.hud.set(h);
@@ -167,6 +167,8 @@
     ui.prompt.hide();
     EC.fx.reset();
     level.loadCheckpoint(level.checkpoint);
+    // back in the first room, the wall has to come down again or he never comes out
+    if (level.checkpoint === 0) level.blowWall();
     hudKey = '';
     mode = 'play';
     const f = level.focus();
@@ -184,7 +186,7 @@
     ui.hud.show(false);
     ui.rec(false);
     scene = EC.scenes.newLawn();
-    cs = new EC.Cutscene(EC.scenes.ending, scene, { gift: level.hasGift, disks: level.disksGot.size, disksTotal: EC.LEVEL.DISKS.length });
+    cs = new EC.Cutscene(EC.scenes.ending, scene, { gift: level.hasGift });
     setSkip('Skip ▸▸');
   }
   function showResults() {
@@ -196,14 +198,11 @@
     const best = EC.store.get('best', null);
     const isBest = best == null || s.time < best;
     if (isBest) EC.store.set('best', s.time);
-    const disks = level.disksGot.size;
-    const total = EC.LEVEL.DISKS.length;
     const rows = [
       ['Time', EC.fmtTime(s.time) + (isBest ? ' (best)' : ' (best ' + EC.fmtTime(best) + ')')],
       ['Times caught', s.deaths],
       ['Hit by household objects', s.hits],
       ['Apologies', s.apologies + ' (accepted: 0)'],
-      ['Eddie’s Couch backups', disks + '/' + total],
       ['The gift', level.hasGift ? 'Delivered' : 'Mom brought it out'],
     ];
     ui.panel.show({
@@ -330,8 +329,6 @@
     EC.scenes.ensureBackgrounds();
     if (data && data.mode === 'play') {
       startTutorial({ checkpoint: data.cp || 0 });
-      (data.disks || []).forEach((i) => level.disksGot.add(i));
-      level.disks.forEach((d) => (d.got = level.disksGot.has(d.i)));
       if (data.stats) Object.assign(level.stats, data.stats);
       ui.tutorial.hide();
       if (!data.cp) level.blowWall();
@@ -360,7 +357,6 @@
     hot.snapshot(() => ({
       mode: mode === 'play' || mode === 'paused' || mode === 'gameover' ? 'play' : null,
       cp: level ? level.checkpoint : 0,
-      disks: level ? Array.from(level.disksGot) : [],
       stats: level ? level.stats : null,
     }));
   }

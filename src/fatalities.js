@@ -28,7 +28,6 @@
       this.blood = new EC.Particles();
       this.bits = new EC.Particles();
       this.cam = { z: 1, x: level.b.x + 30, y: FLOOR - 60 };
-      this.stamp = null;
       this.gary = 0;
       this.red = 0;
       this.glass = null;
@@ -166,10 +165,6 @@
     }
     crater(x) {
       this.decals.push({ kind: 'crater', x });
-    }
-    stampIt(text) {
-      this.stamp = { text, t: 0 };
-      sfx.stamp();
     }
     // Mom, walking somewhere with purpose.
     momWalk(x) {
@@ -309,7 +304,6 @@
       this.tears.update(d);
       this.blood.update(d);
       this.bits.update(d);
-      if (this.stamp) this.stamp.t += dt;
       if (this.glass) this.glass.t += dt;
     }
 
@@ -390,7 +384,7 @@
       this.tears.draw(g, 0);
     }
 
-    // Things on the glass of the TV: a face, a red tide, Gary, the stamp.
+    // Things on the glass of the TV: a face, a red tide, Gary.
     drawScreen(g) {
       if (this.red > 0) {
         const h = EC.H * this.red;
@@ -405,28 +399,6 @@
       if (this.gary > 0) this.drawGary(g);
       if (this.momScore > 0) this.drawMomScore(g);
       if (this.wipe > 0 && this.wipe < 1) this.drawWipe(g);
-      if (this.stamp) {
-        const s = this.stamp;
-        const k = Math.min(1, s.t / 0.16);
-        const sc = 1.8 - 0.8 * EC.ease.out(k);
-        g.save();
-        g.translate(EC.W / 2, 64);
-        g.rotate(-0.07);
-        g.scale(sc, sc);
-        g.globalAlpha = Math.min(1, k * 1.5);
-        g.font = '400 30px ' + EC.FONT.display;
-        g.textAlign = 'center';
-        g.textBaseline = 'middle';
-        const w = g.measureText(s.text).width + 22;
-        g.strokeStyle = '#ff3b30';
-        g.lineWidth = 3;
-        g.strokeRect(-w / 2, -22, w, 44);
-        g.fillStyle = C.ink;
-        g.fillText(s.text, 3, 3);
-        g.fillStyle = '#ff3b30';
-        g.fillText(s.text, 0, 0);
-        g.restore();
-      }
     }
     drawGlass(g) {
       const G = this.glass;
@@ -734,7 +706,6 @@
     sfx.pat();
     yield 0.18;
     sfx.pat();
-    F.stampIt('LAWN DARTED.');
     yield* grief(F, cs, z.x);
     yield* aftermath(F, cs, 'mop');
   }
@@ -786,7 +757,6 @@
     F.shake(2, 0.15);
     yield 0.7;
     sfx.pat();
-    F.stampIt('RECLINED.');
     yield* grief(F, cs, cube.x);
     yield* aftermath(F, cs, 'mop');
   }
@@ -869,7 +839,6 @@
     sfx.pat();
     yield 0.4;
     F.messHint = mx + 3;
-    F.stampIt('LEFTOVERS.');
     yield* grief(F, cs, shoe.x);
     yield* aftermath(F, cs, 'leftovers');
   }
@@ -920,7 +889,6 @@
     yield 0.12;
     F.beast.jitter = 0;
     yield 0.8;
-    F.stampIt('PUNTED.');
     yield* grief(F, cs, hx);
     yield* aftermath(F, cs, 'mop');
   }
@@ -985,7 +953,6 @@
     sfx.pat();
     yield 0.15;
     frame.y -= 1;
-    F.stampIt('FRAMED.');
     yield* grief(F, cs, frame.x);
     yield* aftermath(F, cs, 'frame');
   }
@@ -1074,7 +1041,6 @@
     F.shake(3, 0.5);
     yield 1.1;
     F.pose({ arm: 'swing0', armB: 'swing1', head: 'n' });
-    F.stampIt('SPLIT DECISION.');
     yield* grief(F, cs, bx - 112);
     yield* aftermath(F, cs, 'tape');
   }
@@ -1151,7 +1117,6 @@
     F.swap(head, 'headBlink');
     yield 0.15;
     F.swap(head, 'head');
-    F.stampIt('POPPED.');
     yield* grief(F, cs, body.x);
     yield* aftermath(F, cs, 'head');
   }
@@ -1192,7 +1157,6 @@
     F.sparkle(bx + 30, FLOOR - 52);
     sfx.wish();
     yield 1.0;
-    F.stampIt('WISHBONED.');
     yield* grief(F, cs, F.messX());
     yield* aftermath(F, cs, 'mop');
   }
@@ -1262,7 +1226,6 @@
     sfx.click();
     yield 0.35;
     sfx.pat();
-    F.stampIt('TIDIED UP.');
     yield* grief(F, cs, sx);
     yield* aftermath(F, cs, 'wipe');
   }
@@ -1333,7 +1296,6 @@
     sfx.organ();
     sfx.cheer();
     yield 1.9;
-    F.stampIt('FLAWLESS.');
     yield* grief(F, cs, bx + 30);
     yield* aftermath(F, cs, 'score');
   }

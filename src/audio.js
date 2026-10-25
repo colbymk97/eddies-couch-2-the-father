@@ -208,9 +208,6 @@
       tone({ type: 'sine', f: 72, f2: 38, dur: 0.16, vol: 0.32 });
       noise({ f: 380, dur: 0.08, vol: 0.18 });
     },
-    disk() {
-      [660, 880, 1320].forEach((f, i) => tone({ type: 'square', f, dur: 0.09, vol: 0.07, delay: i * 0.06 }));
-    },
     key() {
       [1568, 2093, 2637, 3136].forEach((f, i) => tone({ type: 'triangle', f, dur: 0.14, vol: 0.12, delay: i * 0.05 }));
     },
@@ -314,10 +311,6 @@
     },
     wish() {
       [1047, 1319, 1568, 2093, 2637].forEach((f, i) => tone({ type: 'triangle', f, dur: 0.22, vol: 0.08, delay: i * 0.07 }));
-    },
-    stamp() {
-      tone({ type: 'sine', f: 110, f2: 55, dur: 0.18, vol: 0.45 });
-      noise({ f: 700, dur: 0.1, vol: 0.35 });
     },
     organ() {
       [261.6, 329.6, 392, 523.3].forEach((f) => {

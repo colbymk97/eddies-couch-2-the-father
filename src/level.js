@@ -54,13 +54,6 @@
     { x: 4008, w: 60, y: FLOOR - 96 },
   ];
   for (let i = 0; i < 8; i++) PLATFORMS.push({ x: 3880 + i * 16, w: 16, y: FLOOR - 12 * (i + 1), step: true });
-  const DISKS = [
-    { x: 442, y: 180 },
-    { x: 1259, y: 134 },
-    { x: 2577, y: 136 },
-    { x: 3426, y: 166 },
-    { x: 4040, y: 118 },
-  ];
   const KEY = { x: 4124, y: 194 };
   const GIFT = { x: 4147, y: 195 };
   const CHANDELIER = { x: 2376, y: 162, w: 40, h: 22 };
@@ -274,7 +267,6 @@
       if (!bg) buildBackground();
       this.parts = new EC.Particles();
       this.stats = { time: 0, hits: 0, deaths: 0, apologies: 0 };
-      this.disksGot = new Set();
       this.checkpoint = 0;
       this.t = 0;
       this.loadCheckpoint(opts.checkpoint || 0);
@@ -320,7 +312,6 @@
       this.caughtT = 0;
       this.fatal = null;
       this.cam = EC.clamp(startX - 190, 0, LEVEL_W - EC.W);
-      this.disks = DISKS.map((d, i) => Object.assign({ i, got: this.disksGot.has(i) }, d));
       this.keyGot = false;
       this.giftGot = false;
       // Mom, at the stove, making casserole
@@ -988,16 +979,6 @@
 
     checkPickups() {
       const zb = this.zbox();
-      for (const d of this.disks) {
-        if (d.got) continue;
-        if (EC.overlap(zb, { x: d.x - 5, y: d.y - 5, w: 10, h: 10 })) {
-          d.got = true;
-          this.disksGot.add(d.i);
-          sfx.disk();
-          sfx.sparkle();
-          this.sparkle(d.x, d.y, ['#7fd7ff', '#ffffff', '#3f7fd9']);
-        }
-      }
       if (!this.keyGot && EC.overlap(zb, { x: KEY.x - 9, y: KEY.y - 6, w: 18, h: 10 })) {
         this.keyGot = this.hasKey = true;
         sfx.key();
@@ -1163,12 +1144,6 @@
       R(g, CHANDELIER.x + 19, TOP, 2, CHANDELIER.y - TOP, C.brassS);
 
       // pickups
-      for (const d of this.disks) {
-        if (d.got) continue;
-        const bob = Math.round(Math.sin(t * 3 + d.i) * 1.5);
-        art.put(g, art.prop('disk'), d.x, d.y + bob);
-        if (Math.floor(t * 2 + d.i) % 3 === 0) art.glow(g, d.x + 3, d.y - 3 + bob, 6, 'rgba(150,220,255,0.9)', 0.7);
-      }
       if (!this.keyGot) {
         art.put(g, art.prop('key'), KEY.x, KEY.y);
         if (this.lockedSeen) {
@@ -1414,7 +1389,7 @@
     }
 
     hudState() {
-      return { disks: this.disksGot.size, disksTotal: DISKS.length, key: this.hasKey, gift: this.hasGift, time: this.stats.time };
+      return { key: this.hasKey, gift: this.hasGift, time: this.stats.time };
     }
     // Where to centre the iris wipe, in screen pixels.
     focus() {
@@ -1426,5 +1401,5 @@
   }
 
   EC.Level = Level;
-  EC.LEVEL = { ROOMS, DISKS, FLOOR };
+  EC.LEVEL = { ROOMS, FLOOR };
 })();

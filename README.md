@@ -28,13 +28,12 @@ Open `index.html` in a browser. There's no build step, no dependencies, and no s
 - **Alex shouts warnings** from where she's hiding near the camera: a picture (jump, duck, go, the key's behind you), never words, so nothing covers the play area.
 - **He throws things:** a casserole, the TV remote, the gravy boat, the commemorative plates.
 - **The front door is locked.** The key is on the hall table, right next to the birthday gift. Taking the gift slows you down, and the ending notices whether you have it.
-- **Five Eddie's Couch backup disks** are hidden on top of things. Get all of them and Zach leaves one for Brandon.
 
-Getting caught sends you back to the start of the room you're in. Disks you've found stay found.
+Getting caught sends you back to the start of the room you're in.
 
 ## Getting caught
 
-He doesn't just catch you. Each catch is worse than the last, in order, and after the tenth he picks at random. Press Enter or tap to skip to the end of one. The game-over card counts how many you've seen.
+He doesn't just catch you. Each catch is worse than the last, in order, and after the tenth he picks at random. Nothing on screen names them; it just happens. The names below are for us. Press Enter or tap to skip to the end of one. The game-over card counts how many you've seen.
 
 Every time, Alex runs in, drops to her knees beside what's left of Zach, and cries. She's still crying when the card comes up.
 
