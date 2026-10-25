@@ -13,7 +13,7 @@
     display: '"Bungee", "Arial Black", Impact, sans-serif',
     ui: '"Pixelify Sans", "Trebuchet MS", Verdana, sans-serif',
   };
-  const NAMES = { zach: 'ZACH', alex: 'ALEX', dad: 'DAD', mom: 'MOM', beast: "GIRLFRIEND'S DAD BEAST" };
+  const NAMES = { zach: 'ZACH', alex: 'ALEX', dad: 'DAD', mom: 'MOM', beast: "GIRLFRIEND'S DAD BEAST", eddie: 'EDDIE' };
 
   // ================================================================ runner
   // A script is a generator. It yields a number (seconds), 'line' (wait for the reader), or a function (wait until true).
@@ -97,6 +97,7 @@
     }
     if (who === 'mom') return { img: art.mom(poseOf(S.mom, 'idle'), 0).img, x: 4, y: 3, w: 17, h: 17 };
     if (who === 'beast') return { img: art.beastFront({ roar: true }).img, x: 22, y: 0, w: 40, h: 40 };
+    if (who === 'eddie') return { img: art.eddie(S.car ? S.car.face : 'ok').img, x: 1, y: 1, w: 16, h: 16 };
     return null;
   }
 
@@ -110,6 +111,8 @@
       loud: o.loud,
       muffled: o.muffled,
       speed: o.speed,
+      // out on the lawn everyone's on the ground, so the lines go up in the sky
+      top: o.top != null ? o.top : cs.scene.view === 'lawn',
       portrait: portrait(who, cs.scene),
     });
     cs.typer = ui.dialog;
@@ -585,6 +588,10 @@
     R(g, 0, LY, EC.W, EC.H - LY, '#2f4a2a');
     for (let x = 0; x < EC.W; x += 3) R(g, x, LY - 1 - ((x * 7) % 3), 1, 2 + ((x * 7) % 3), '#3c5c34');
     for (let i = 0; i < 6; i++) R(g, 200 - i * 4, LY + i * 9, 32 + i * 8, 8, '#9a9488');
+    // the street out front
+    R(g, 0, 248, EC.W, 3, '#9a9890');
+    R(g, 0, 251, EC.W, EC.H - 251, '#24242a');
+    for (let x = 8; x < EC.W; x += 40) R(g, x, 263, 18, 2, '#8a7a3a');
     // mailbox & lamp post
     R(g, 412, 170, 3, 44, '#3a2a1a');
     R(g, 404, 160, 20, 12, '#2a3a5a');
@@ -604,6 +611,12 @@
       zach: { x: 216, y: 196, face: 1, pose: 'hurt', rot: 0, visible: true, gift: false, casserole: false },
       mom: null,
       toss: null,
+      alex: { x: 90, y: 136, face: 1, pose: 'worry', visible: false },
+      win: 0,
+      car: null,
+      beastOut: null,
+      couchFly: null,
+      couchDown: null,
       cam: { x: EC.W / 2, y: EC.H / 2, z: 1 },
       black: 1,
       parts: new EC.Particles(),
@@ -682,6 +695,12 @@
     R(g, 244, 128, 8, 10, E.porch > 0.5 ? '#fff2b0' : '#5a5040');
     R(g, 243, 126, 10, 2, '#2a2a30');
     if (E.porch > 0.5) art.glow(g, 248, 134, 60, 'rgba(255,220,150,0.55)');
+    // the left window, pushed up from inside
+    if (E.win > 0) {
+      const h = Math.round(19 * E.win);
+      R(g, 70, 136 - h, 40, h, '#5a3a22');
+      R(g, 70, 136 - h - 2, 40, 2, '#f4f1ea');
+    }
     // zach
     const z = E.zach;
     if (z && z.visible) {
@@ -690,6 +709,47 @@
       if (z.gift) art.put(g, art.prop('gift'), z.x + 9 * z.face, z.y - 9);
       if (z.casserole) art.put(g, art.prop('casserole'), z.x - 9 * z.face, z.y - 14);
     }
+    const al = E.alex;
+    if (al && al.visible) art.put(g, art.alex(al.pose, Math.floor(E.t * 12)), al.x, al.y, { flip: al.face < 0 });
+    // him, out of the house at last, in his socks
+    const bo = E.beastOut;
+    if (bo) {
+      art.put(g, art.beastFront({ socks: true, roar: true }), bo.x, bo.y, { sx: bo.s, sy: bo.s });
+      art.beastFrontEyes.forEach(([ex, ey]) => art.glow(g, bo.x + ex * bo.s, bo.y + ey * bo.s, 9, 'rgba(255,43,43,0.9)', 0.9));
+    }
+    // flattened under Eddie's couch: horns out one end, socks out the other
+    if (E.couchDown) {
+      const cx = E.couchDown.x;
+      const tw = Math.floor(E.t * 7) % 2;
+      R(g, cx - 42, 251, 7, 3, C.horn);
+      R(g, cx - 45, 248, 4, 3, C.horn);
+      R(g, cx - 42, 258, 7, 2, C.hornS);
+      R(g, cx + 28, 252, 18, 6, C.khaki);
+      R(g, cx + 28, 257, 18, 1, C.khakiS);
+      R(g, cx + 46, 250 - tw, 6, 4, C.sock);
+      R(g, cx + 46, 255 + tw, 6, 4, C.sock);
+      art.put(g, art.roofCouch(), cx, 262, { rot: 0.04 });
+    }
+    // Eddie's car
+    const car = E.car;
+    if (car) {
+      const cy = car.y + Math.round(Math.sin(car.rock * 24) * car.rock * 2);
+      art.glow(g, car.x - 70, cy - 20, 56, 'rgba(255,236,170,0.5)');
+      art.put(g, art.wagon(), car.x, cy);
+      for (const wx of [car.x - 38, car.x + 38]) {
+        const a = -car.x / 7;
+        art.disc(g, Math.round(wx), cy - 9, 7, '#1a1a1e');
+        art.disc(g, Math.round(wx), cy - 9, 3, '#9aa0a6');
+        R(g, Math.round(wx + Math.cos(a) * 5) - 1, Math.round(cy - 9 + Math.sin(a) * 5) - 1, 2, 2, '#5a5a62');
+      }
+      art.put(g, art.eddie(car.face), car.x - 13, cy - 22);
+      if (car.couch) {
+        art.put(g, art.roofCouch(), car.x + 16, cy - 39);
+        R(g, car.x - 4, cy - 55, 2, 16, '#2a2a30');
+        R(g, car.x + 34, cy - 55, 2, 16, '#2a2a30');
+      }
+    }
+    if (E.couchFly) art.put(g, art.roofCouch(), E.couchFly.x, E.couchFly.y, { rot: E.couchFly.rot });
     if (E.parts) E.parts.draw(g, 0);
     g.restore();
   }
@@ -1118,8 +1178,30 @@
     S.porch = 0;
     sfx.lightsOff();
     yield 0.9;
-    yield* say(cs, 'alex', 'Tell him happy birthday!', { muffled: true, voice: 'alexm' });
     yield* say(cs, 'zach', '...Is she just staying in there?');
+    // The left window slides up. She is not staying in there.
+    sfx.creak();
+    cs.tween(S, { win: 1 }, 0.6);
+    yield 0.7;
+    const al = S.alex;
+    al.visible = true;
+    yield 0.5;
+    const a0 = cs.t;
+    yield () => {
+      const k = Math.min(1, (cs.t - a0) / 0.5);
+      al.x = EC.lerp(90, 112, k);
+      al.y = EC.lerp(136, LY, k) - Math.sin(k * Math.PI) * 14;
+      return k >= 1;
+    };
+    sfx.land();
+    S.parts.burst(5, { x: al.x, y: LY - 2, g: -20, s0: 10, s1: 40, a0: -Math.PI, a1: 0, life: 0.6, size: 2, color: ['#3c5c34', '#5a7a4a'] });
+    al.pose = 'run';
+    cs.tween(al, { x: 266 }, 0.9);
+    yield 0.95;
+    al.pose = 'smile';
+    zz.face = -1;
+    zz.pose = 'grin';
+    yield 0.6;
     if (!info.gift) {
       zz.pose = 'shock';
       yield* say(cs, 'zach', 'The gift. I left the gift in there.');
@@ -1167,18 +1249,72 @@
     S.porch = 0;
     sfx.lightsOff();
     zz.pose = 'worry';
-    yield 0.8;
-    sfx.crickets();
-    yield 1.5;
-    // He goes. Walking, at first.
+    yield 0.6;
+    // Headlights. Tires. A station wagon with a couch on the roof. It's Eddie.
+    const car = (S.car = { x: EC.W + 90, y: 268, rock: 0, face: 'ok', couch: true });
+    sfx.screech();
+    cs.tween(car, { x: 236 }, 1.1, EC.ease.out);
     zz.face = 1;
-    zz.pose = 'walk';
-    cs.tween(zz, { x: zz.x + 46 }, 1.2);
-    yield 1.2;
+    zz.pose = 'shock';
+    al.face = 1;
+    al.pose = 'worry';
+    yield 1.3;
+    yield* say(cs, 'eddie', 'Get in!');
+    // The front door comes off its hinges. He's taken his slippers off.
+    S.door = 1;
+    S.porch = 1;
+    sfx.smash();
+    sfx.roar(1.3);
+    EC.fx.shake(6, 0.6);
+    S.parts.burst(16, { x: 216, y: 150, g: 500, s0: 80, s1: 240, a0: -Math.PI, a1: 0, life: 1.2, sizes: [2, 3], color: [C.wood, C.woodS, '#f4f1ea'], floor: LY + 4 });
+    const bo = (S.beastOut = { x: 216, y: 210, s: 0.9 });
+    cs.tween(bo, { x: 236, y: 228, s: 1 }, 0.6, EC.ease.out);
+    // they run for it, and dive into the back
     zz.pose = 'run';
-    sfx.whoosh();
-    cs.tween(zz, { x: EC.W + 40 }, 0.6, EC.ease.in);
-    yield 0.45;
+    zz.face = -1;
+    al.pose = 'run';
+    al.face = -1;
+    cs.tween(zz, { x: 280, y: 246 }, 0.5, EC.ease.in);
+    cs.tween(al, { x: 254, y: 246 }, 0.5, EC.ease.in);
+    yield 0.5;
+    zz.visible = false;
+    al.visible = false;
+    sfx.door();
+    sfx.land();
+    car.rock = 1;
+    cs.tween(car, { rock: 0 }, 0.6, EC.ease.out);
+    yield 0.5;
+    // Eddie checks the back seat. The casserole. The two of them.
+    car.face = 'back';
+    yield* say(cs, 'eddie', 'Don’t make a mess in the car.');
+    car.face = 'ok';
+    // He floors it. The couch stays where it was.
+    sfx.rev();
+    sfx.screech();
+    cs.tween(car, { x: -140 }, 1.1, EC.ease.in);
+    S.parts.burst(10, { x: car.x + 64, y: car.y - 8, g: -30, s0: 20, s1: 60, a0: -0.6, a1: 0.6, life: 1.2, sizes: [3, 4], color: ['#6a6a72', '#4a4a52'] });
+    car.couch = false;
+    const cf = (S.couchFly = { x: car.x + 16, y: car.y - 39, rot: 0 });
+    cs.tween(bo, { x: 300, y: 252, s: 1.05 }, 0.4, EC.ease.in);
+    const f0 = cs.t;
+    yield () => {
+      const k = Math.min(1, (cs.t - f0) / 0.45);
+      cf.x = EC.lerp(252, 300, k);
+      cf.y = EC.lerp(229, 196, k) - Math.sin(k * Math.PI) * 16;
+      cf.rot = k * 1.2;
+      return k >= 1;
+    };
+    // right in the chest. Down he goes, couch on top.
+    S.couchFly = null;
+    S.beastOut = null;
+    S.couchDown = { x: 300 };
+    sfx.crunch();
+    sfx.smash();
+    EC.fx.shake(7, 0.6);
+    S.parts.burst(14, { x: 300, y: 256, g: 200, s0: 30, s1: 120, a0: -Math.PI, a1: 0, life: 1, sizes: [2, 3], color: ['#8a8478', '#5a5650'], floor: 268 });
+    yield 1.1;
+    sfx.roar(0.7);
+    yield 1.4;
     cs.tween(S, { black: 0.55 }, 0.6);
     yield 0.6;
   };

@@ -553,6 +553,7 @@
       dialogEl.querySelector('.who').hidden = !o.label;
       dialogEl.classList.toggle('loud', !!o.loud);
       dialogEl.classList.toggle('muffled', !!o.muffled);
+      dialogEl.classList.toggle('top', !!o.top);
       const p = o.portrait;
       portraitEl.hidden = !p;
       if (p) {

@@ -143,6 +143,7 @@
     alex: { type: 'triangle', f: 780, vol: 0.09 },
     alexm: { type: 'triangle', f: 560, vol: 0.07, filter: ['lowpass', 650] },
     zachm: { type: 'square', f: 420, vol: 0.05, filter: ['lowpass', 500] },
+    eddie: { type: 'square', f: 250, vol: 0.06, filter: ['lowpass', 1300] },
     mom: { type: 'triangle', f: 640, vol: 0.085, vib: true },
     dad: { type: 'square', f: 175, vol: 0.05, filter: ['lowpass', 1400] },
     beast: { type: 'sawtooth', f: 72, vol: 0.16, crush: true },
@@ -336,6 +337,15 @@
     tsk() {
       noise({ f: 6000, ftype: 'highpass', dur: 0.02, vol: 0.3 });
       noise({ f: 6000, ftype: 'highpass', dur: 0.02, vol: 0.3, delay: 0.12 });
+    },
+    // Eddie's car
+    screech() {
+      noise({ f: 2600, f2: 1700, ftype: 'bandpass', q: 7, dur: 0.8, vol: 0.32 });
+      tone({ type: 'sawtooth', f: 1300, f2: 900, dur: 0.7, vol: 0.04, vib: [30, 40], filter: ['bandpass', 1400, 4] });
+    },
+    rev() {
+      tone({ type: 'sawtooth', f: 55, f2: 150, dur: 0.9, vol: 0.16, filter: ['lowpass', 600] });
+      noise({ f: 300, f2: 900, dur: 0.8, vol: 0.12 });
     },
     tape() {
       noise({ f: 2400, f2: 1600, ftype: 'bandpass', q: 1.5, dur: 0.3, vol: 0.22 });

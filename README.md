@@ -2,11 +2,12 @@
 
 Zach promised his girlfriend's dad he'd show him *Eddie's Couch*. The game no longer exists. The dad has gotten over the game. He has not gotten over Zach.
 
-A browser game in three parts:
+A browser game in four parts:
 
 1. **The intro.** All three scenes of the intro script (The Hats, The Verdict, Not Again). There's no narration: the scenes act the story out with camera moves and close-ups, and only the characters' lines are text. Then the title card and the party hat.
 2. **The tutorial.** Press [A] to apologize. It does nothing. Press [B] to run. A wall explodes.
 3. **Level 1: Escape the House.** Five rooms, the Girlfriend's Dad Beast right behind you, and a front door that is locked.
+4. **The getaway.** Out on the lawn, Alex climbs out a window to join Zach, and Eddie (it's his birthday, it's his couch) pulls up in a wood-panelled station wagon with the couch strapped to the roof. "Get in!" The Beast comes through the front door in his socks. "Don't make a mess in the car." Eddie floors it, and the couch slides off the roof into the Beast.
 
 ## Play
 

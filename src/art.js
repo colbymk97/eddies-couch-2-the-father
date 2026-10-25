@@ -852,21 +852,24 @@
   // Front view, 84x106. The khakis hold. They are good khakis.
   art.beastFront = function (o) {
     o = o || {};
-    const key = 'beast-f-' + (o.roar ? 'r' : '') + (o.stomp ? 's' : '') + (o.look || '');
+    const key = 'beast-f-' + (o.roar ? 'r' : '') + (o.stomp ? 's' : '') + (o.look || '') + (o.socks ? 'x' : '');
+    // in his socks, the slippers left safely indoors
+    const foot = o.socks ? C.sock : C.slipper;
+    const footL = o.socks ? '#ffffff' : C.slipperL;
     return sprite(key, 84, 106, (g) => {
       if (o.stomp) {
         R(g, 44, 74, 7, 17, C.khaki);
-        R(g, 43, 90, 9, 5, C.slipper);
-        R(g, 44, 90, 7, 1, C.slipperL);
+        R(g, 43, 90, 9, 5, foot);
+        R(g, 44, 90, 7, 1, footL);
       } else {
         R(g, 44, 84, 7, 17, C.khaki);
-        R(g, 43, 100, 9, 5, C.slipper);
-        R(g, 44, 100, 7, 1, C.slipperL);
+        R(g, 43, 100, 9, 5, foot);
+        R(g, 44, 100, 7, 1, footL);
         R(g, 46, 86, 1, 14, C.khakiS);
       }
       R(g, 33, 84, 7, 17, C.khaki);
-      R(g, 32, 100, 9, 5, C.slipper);
-      R(g, 33, 100, 7, 1, C.slipperL);
+      R(g, 32, 100, 9, 5, foot);
+      R(g, 33, 100, 7, 1, footL);
       R(g, 35, 86, 1, 14, C.khakiS);
       R(g, 40, 84, 4, 6, C.khakiS);
       for (let y = 26; y < 83; y++) {
@@ -1345,6 +1348,115 @@
   art.gib = function (name) {
     const d = GIBS[name];
     return sprite('gib-' + name, d[0], d[1], d[2], true);
+  };
+
+  // ================================================================ EDDIE
+  // It's his birthday. It's his couch. He's driving.
+  C.eHair = '#a8743a';
+  C.eHairL = '#c9944f';
+  C.eHood = '#3f7a5a';
+  C.eHoodS = '#2c5a42';
+  function eddieHead(g, face) {
+    // hoodie
+    R(g, 1, 13, 14, 3, C.eHood);
+    R(g, 1, 13, 3, 3, C.eHoodS);
+    R(g, 6, 13, 1, 3, '#f4f1ea');
+    R(g, 9, 13, 1, 3, '#f4f1ea');
+    // face, under a lot of hair
+    R(g, 3, 4, 10, 9, C.skin);
+    R(g, 3, 11, 10, 2, C.skinS);
+    R(g, 2, 2, 12, 4, C.eHair);
+    R(g, 1, 4, 3, 7, C.eHair);
+    R(g, 12, 4, 3, 6, C.eHair);
+    R(g, 4, 5, 4, 2, C.eHair);
+    R(g, 4, 2, 5, 1, C.eHairL);
+    R(g, 9, 5, 2, 1, C.eHairL);
+    // stubble
+    [[4, 11], [6, 12], [8, 11], [10, 12], [11, 11], [5, 12]].forEach(([x, y]) => R(g, x, y, 1, 1, '#c9a07a'));
+    if (face === 'back') {
+      // looking over his shoulder at the back seat
+      R(g, 3, 7, 2, 1, C.ink);
+      R(g, 7, 7, 2, 1, C.ink);
+      R(g, 3, 8, 1, 1, C.ink);
+      R(g, 7, 8, 1, 1, C.ink);
+    } else {
+      // half-lidded, completely calm
+      R(g, 5, 7, 2, 1, C.ink);
+      R(g, 9, 7, 2, 1, C.ink);
+      R(g, 6, 8, 1, 1, C.ink);
+      R(g, 10, 8, 1, 1, C.ink);
+    }
+    R(g, 6, 10, 4, 1, '#a8604a');
+    // birthday hat, at an angle
+    R(g, 9, 0, 3, 2, '#6fbf5a');
+    R(g, 10, -1, 1, 1, C.yellow);
+    R(g, 8, 1, 5, 1, C.yellow);
+  }
+  art.eddie = function (face) {
+    return sprite('eddie-' + (face || 'ok'), 16, 16, (g) => {
+      g.translate(0, 1);
+      eddieHead(g, face);
+    });
+  };
+  // A wood-panelled station wagon, facing left. The wheels are drawn separately so they can turn.
+  art.wagon = function () {
+    return sprite('wagon', 124, 40, (g) => {
+      const body = '#d8cba0';
+      const bodyS = '#a89a70';
+      const glass = '#24304f';
+      // roof rack
+      R(g, 40, 0, 76, 2, '#3a3a40');
+      for (const x of [42, 76, 112]) R(g, x, 2, 2, 2, '#3a3a40');
+      // cabin
+      R(g, 36, 4, 84, 13, body);
+      for (let y = 4; y < 17; y++) R(g, Math.round(36 - (y - 4) * 0.8), y, 3, 1, body);
+      R(g, 36, 4, 84, 1, '#efe6c8');
+      // windows: Eddie's, the back seat, the way back
+      R(g, 37, 6, 25, 10, glass);
+      R(g, 65, 6, 25, 10, glass);
+      R(g, 93, 6, 24, 10, glass);
+      for (let y = 6; y < 16; y++) R(g, Math.round(35 - (y - 6) * 0.8), y, 2, 1, glass);
+      [[39, 7], [67, 7], [95, 7]].forEach(([x, y]) => {
+        R(g, x, y, 6, 1, '#6a7ea8');
+        R(g, x, y + 1, 3, 1, '#6a7ea8');
+      });
+      // body, hood, the wood
+      R(g, 2, 16, 120, 15, body);
+      R(g, 2, 16, 26, 2, '#efe6c8');
+      R(g, 2, 29, 120, 2, bodyS);
+      R(g, 28, 19, 90, 9, '#8a5a38');
+      R(g, 28, 19, 90, 1, '#c9a46a');
+      R(g, 28, 27, 90, 1, '#c9a46a');
+      for (const x of [63, 91]) R(g, x, 17, 1, 13, bodyS);
+      for (const x of [54, 82, 110]) R(g, x, 21, 3, 1, '#c9ced3');
+      // wheel arches
+      for (const x of [24, 100]) {
+        for (let dy = -9; dy <= 0; dy++) {
+          const w = Math.round(Math.sqrt(81 - dy * dy));
+          R(g, x - w, 31 + dy, w * 2, 1, '#1a1a1e');
+        }
+      }
+      // bumpers, lights
+      R(g, 0, 28, 6, 3, '#c9ced3');
+      R(g, 118, 28, 6, 3, '#c9ced3');
+      R(g, 0, 19, 3, 4, '#fff2b0');
+      R(g, 121, 19, 2, 5, '#d8433a');
+    });
+  };
+  // Eddie's couch. On the roof. Strapped down, more or less.
+  art.roofCouch = function () {
+    return sprite('roof-couch', 64, 16, (g) => {
+      R(g, 4, 0, 56, 9, '#c9672e');
+      R(g, 0, 8, 64, 6, '#d97a3a');
+      R(g, 0, 4, 6, 10, '#a8521f');
+      R(g, 58, 4, 6, 10, '#a8521f');
+      for (let x = 8; x < 58; x += 7) R(g, x, 0, 1, 8, '#a8521f');
+      R(g, 4, 3, 56, 1, '#e8a050');
+      R(g, 22, 8, 1, 6, '#a8521f');
+      R(g, 42, 8, 1, 6, '#a8521f');
+      R(g, 5, 14, 3, 2, C.woodD);
+      R(g, 56, 14, 3, 2, C.woodD);
+    });
   };
 
   // ================================================================ PROPS
