@@ -1,4 +1,4 @@
-/* Eddie's Couch 2 — what happens when he catches you. Each catch is worse than the last. */
+/* Eddie's Couch 2 — what happens when he catches you. He picks at random, and never the same thing twice in a row. */
 (function () {
   'use strict';
   const EC = window.EC;
@@ -1422,13 +1422,23 @@
     { name: 'FLAWLESS.', script: flawless },
   ];
 
-  // Each catch is the next one on the list for this session; after the last, he picks.
-  let session = 0;
+  // A shuffled bag: every catch is a random one, and you see all ten before any of them comes round
+  // again. A fresh bag never starts with the one you just saw.
+  let bag = [];
+  let last = -1;
   EC.fatalities = {
     count: LIST.length,
     create(level) {
-      const idx = session < LIST.length ? session : (Math.random() * LIST.length) | 0;
-      session++;
+      if (!bag.length) {
+        bag = LIST.map((_, i) => i);
+        for (let i = bag.length - 1; i > 0; i--) {
+          const j = (Math.random() * (i + 1)) | 0;
+          [bag[i], bag[j]] = [bag[j], bag[i]];
+        }
+        if (bag[bag.length - 1] === last) [bag[0], bag[bag.length - 1]] = [bag[bag.length - 1], bag[0]];
+      }
+      const idx = bag.pop();
+      last = idx;
       // remembered by name, so reordering the list doesn't muddle the count
       const seen = EC.store.get('deathsSeen', []).filter((n) => typeof n === 'string');
       if (seen.indexOf(LIST[idx].name) < 0) {

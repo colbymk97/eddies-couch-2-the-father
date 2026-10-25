@@ -1351,48 +1351,63 @@
   };
 
   // ================================================================ EDDIE
-  // It's his birthday. It's his couch. He's driving.
-  C.eHair = '#a8743a';
-  C.eHairL = '#c9944f';
-  C.eHood = '#3f7a5a';
-  C.eHoodS = '#2c5a42';
+  // It's his birthday. It's his couch. He's driving. Trucker cap, glasses, a short beard, a black crewneck.
+  C.eSkin = '#d9a478';
+  C.eSkinS = '#b47c52';
+  C.eBeard = '#3e2c22';
+  C.eCap = '#1c1a1e';
   function eddieHead(g, face) {
-    // hoodie
-    R(g, 1, 13, 14, 3, C.eHood);
-    R(g, 1, 13, 3, 3, C.eHoodS);
-    R(g, 6, 13, 1, 3, '#f4f1ea');
-    R(g, 9, 13, 1, 3, '#f4f1ea');
-    // face, under a lot of hair
-    R(g, 3, 4, 10, 9, C.skin);
-    R(g, 3, 11, 10, 2, C.skinS);
-    R(g, 2, 2, 12, 4, C.eHair);
-    R(g, 1, 4, 3, 7, C.eHair);
-    R(g, 12, 4, 3, 6, C.eHair);
-    R(g, 4, 5, 4, 2, C.eHair);
-    R(g, 4, 2, 5, 1, C.eHairL);
-    R(g, 9, 5, 2, 1, C.eHairL);
-    // stubble
-    [[4, 11], [6, 12], [8, 11], [10, 12], [11, 11], [5, 12]].forEach(([x, y]) => R(g, x, y, 1, 1, '#c9a07a'));
-    // glasses
-    R(g, 3, 6, 5, 4, '#4a3428');
-    R(g, 8, 6, 5, 4, '#4a3428');
-    R(g, 4, 7, 3, 2, '#eaf3f8');
-    R(g, 9, 7, 3, 2, '#eaf3f8');
-    R(g, 7, 7, 2, 1, '#4a3428');
+    // black crewneck, the white lettering
+    R(g, 1, 13, 14, 2, '#1c1c22');
+    R(g, 5, 13, 6, 1, '#2e2e36');
+    R(g, 3, 14, 3, 1, '#e8e6e0');
+    R(g, 7, 14, 2, 1, '#e8e6e0');
+    R(g, 10, 14, 3, 1, '#e8e6e0');
+    // face, ears, short dark hair under the cap
+    R(g, 3, 5, 10, 8, C.eSkin);
+    R(g, 2, 7, 1, 2, C.eSkin);
+    R(g, 13, 7, 1, 2, C.eSkin);
+    R(g, 3, 11, 10, 1, C.eSkinS);
+    R(g, 2, 5, 1, 2, C.eBeard);
+    R(g, 13, 5, 1, 2, C.eBeard);
+    // the beard: jaw, chin, and a mustache
+    R(g, 3, 10, 1, 3, C.eBeard);
+    R(g, 12, 10, 1, 3, C.eBeard);
+    R(g, 4, 12, 8, 1, C.eBeard);
+    R(g, 5, 13, 6, 1, C.eBeard);
+    R(g, 5, 10, 2, 1, C.eBeard);
+    R(g, 9, 10, 2, 1, C.eBeard);
+    // glasses, dark rectangular frames
+    R(g, 3, 7, 4, 3, '#1e2230');
+    R(g, 8, 7, 4, 3, '#1e2230');
+    R(g, 7, 7, 1, 1, '#1e2230');
+    R(g, 4, 8, 2, 1, '#cfe0ec');
+    R(g, 9, 8, 2, 1, '#cfe0ec');
     if (face === 'back') {
-      // looking over his shoulder at the back seat
-      R(g, 6, 8, 1, 1, C.ink);
-      R(g, 11, 8, 1, 1, C.ink);
-    } else {
+      // eyes on the back seat, mouth flat
       R(g, 5, 8, 1, 1, C.ink);
       R(g, 10, 8, 1, 1, C.ink);
+      R(g, 6, 11, 4, 1, '#7a3a2a');
+    } else {
+      // the grin
+      R(g, 4, 8, 1, 1, C.ink);
+      R(g, 9, 8, 1, 1, C.ink);
+      R(g, 5, 11, 6, 1, '#7a3a2a');
+      R(g, 6, 11, 4, 1, '#f4f1ea');
     }
-    R(g, 7, 9, 2, 1, C.skinS);
-    R(g, 6, 11, 4, 1, '#a8604a');
-    // birthday hat, at an angle
-    R(g, 9, 0, 3, 2, '#6fbf5a');
-    R(g, 10, -1, 1, 1, C.yellow);
-    R(g, 8, 1, 5, 1, C.yellow);
+    R(g, 7, 9, 2, 1, C.eSkinS);
+    // trucker cap: black front, white mesh back, a gold-edged brim, the patch
+    R(g, 3, -1, 10, 1, C.eCap);
+    R(g, 2, 0, 12, 4, C.eCap);
+    R(g, 11, 0, 3, 4, '#e8e6e0');
+    R(g, 12, 1, 1, 1, '#c9c6be');
+    R(g, 11, 2, 1, 1, '#c9c6be');
+    R(g, 13, 2, 1, 1, '#c9c6be');
+    R(g, 12, 3, 1, 1, '#c9c6be');
+    R(g, 4, 0, 6, 3, '#e08a2a');
+    R(g, 5, 1, 4, 1, '#4a2a18');
+    R(g, 0, 4, 13, 1, C.eCap);
+    R(g, 0, 5, 12, 1, '#e0a030');
   }
   art.eddie = function (face) {
     return sprite('eddie-' + (face || 'ok'), 16, 16, (g) => {

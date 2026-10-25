@@ -7,7 +7,7 @@ A browser game in four parts:
 1. **The intro.** All three scenes of the intro script (The Hats, The Verdict, Not Again). There's no narration: the scenes act the story out with camera moves and close-ups, and only the characters' lines are text. Then the title card and the party hat.
 2. **The tutorial.** Press [A] to apologize. It does nothing. Press [B] to run. A wall explodes.
 3. **Level 1: Escape the House.** Five rooms, the Girlfriend's Dad Beast right behind you, and a front door that is locked.
-4. **The getaway.** Out on the lawn, Alex climbs out a window to join Zach, and Eddie (it's his birthday, it's his couch) pulls up in a wood-panelled station wagon with the couch strapped to the roof. "Get in!" The Beast comes through the front door in his socks. "Don't make a mess in the car." Eddie floors it, and the couch slides off the roof into the Beast.
+4. **The getaway.** Out on the lawn, Alex climbs out a window to join Zach, and Eddie (trucker cap, glasses; it's his birthday, it's his couch) pulls up in a wood-panelled station wagon with the couch strapped to the roof. "Get in!" The Beast comes through the front door in his socks. "Don't make a mess in the car." Eddie floors it, and the couch slides off the roof into the Beast.
 
 ## Play
 
@@ -34,7 +34,7 @@ Getting caught sends you back to the start of the room you're in.
 
 ## Getting caught
 
-He doesn't just catch you. Each catch is worse than the last, in order, and after the tenth he picks at random. Nothing on screen names them; it just happens. The names below are for us. Press Enter or tap to skip to the end of one. The game-over card counts how many you've seen.
+He doesn't just catch you. Each time he picks one of ten at random, and you'll see all ten before any of them repeats. Nothing on screen names them; it just happens. The names below are for us. Press Enter or tap to skip to the end of one. The game-over card counts how many you've seen.
 
 Every time, blood hits the TV screen where the hit lands and runs down the glass. Then Alex runs in, drops to her knees beside what's left of Zach, and cries. She's still crying when the card comes up.
 
