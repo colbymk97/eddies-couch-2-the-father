@@ -45,6 +45,15 @@ He doesn't just catch you. Each catch is worse than the last, in order, and afte
 7. **Tidied Up.** Helicoptered by the ankle until pieces come off; one hits the TV screen. He stacks the rest neatly.
 8. **Flawless.** Punched to pieces, juggled, slam-dunked into a crater. Gary from church rises from the floor and scores it a 10, 10, 10.
 
+## Mom
+
+Alex's mom is completely unbothered by all of this.
+
+- **In the intro** she walks in with a casserole mid-argument, asks if you two are staying for dinner, and tells the Beast to mind the good cardigan. When he roars she stands in the gale and keeps hold of the casserole.
+- **In the kitchen** she's stirring a pot. She waves when Zach runs past. If the Beast comes through while she's there, she points at him and he stops dead for a second, head down.
+- **After every death** she comes in with a mop and a roll of plastic sheeting and tidies up. She hangs the frame back up straight, carries the head back to its body, wipes the TV screen, and holds up her own scorecard for Flawless: a 4.
+- **At the end** the porch light comes on and she hands Zach a casserole for the road, or the gift if he left it behind. Then: "And Zachary? Find the game."
+
 ## Code
 
 Plain JavaScript, Canvas 2D and Web Audio. All art is drawn in code and every sound is synthesized, so the repository has no asset files.
@@ -54,7 +63,7 @@ Plain JavaScript, Canvas 2D and Web Audio. All art is drawn in code and every so
 | `index.html` | The page: a wood-grain TV, the text overlays, touch controls, styles |
 | `src/core.js` | Canvas sizing, keyboard/touch/gamepad input, the fixed-step loop, screen shake, particles, the dialogue typewriter and overlays |
 | `src/audio.js` | Sound effects, character voice blips, and a small step sequencer for the chase and ending music |
-| `src/art.js` | Every sprite (Zach, Alex, Dad, the Beast, props) and the room painters |
+| `src/art.js` | Every sprite (Zach, Alex, Dad, Mom, the Beast, props) and the room painters |
 | `src/scenes.js` | The cutscene runner (generator-based scripts), camera cuts and pans, speaker portraits, the intro, the title card and the ending |
 | `src/fatalities.js` | The eight ways he deals with Zach: body-part physics, blood that lands and stays, camera push-ins, Gary's scorecards |
 | `src/level.js` | Level 1: room layout, Zach's movement, the Beast's AI, throws, pickups, the door, night lighting and the foreground layer |

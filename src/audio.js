@@ -143,6 +143,7 @@
     alex: { type: 'triangle', f: 780, vol: 0.09 },
     alexm: { type: 'triangle', f: 560, vol: 0.07, filter: ['lowpass', 650] },
     zachm: { type: 'square', f: 420, vol: 0.05, filter: ['lowpass', 500] },
+    mom: { type: 'triangle', f: 640, vol: 0.085, vib: true },
     dad: { type: 'square', f: 175, vol: 0.05, filter: ['lowpass', 1400] },
     beast: { type: 'sawtooth', f: 72, vol: 0.16, crush: true },
     gary: { type: 'triangle', f: 330, vol: 0.08 },
@@ -157,7 +158,7 @@
       }
       const v = VOICES[who];
       if (!v) return;
-      tone({ type: v.type, f: v.f * EC.rand(0.9, 1.12), dur: 0.055, vol: v.vol, crush: v.crush, filter: v.filter });
+      tone({ type: v.type, f: v.f * EC.rand(0.9, 1.12), dur: 0.055, vol: v.vol, crush: v.crush, filter: v.filter, vib: v.vib ? [9, 18] : null });
     },
     tick(alt) {
       noise({ f: alt ? 3400 : 2500, ftype: 'bandpass', q: 7, dur: 0.05, vol: 0.28 });
@@ -332,6 +333,21 @@
     cheer() {
       noise({ f: 1500, ftype: 'bandpass', q: 0.6, dur: 2.2, vol: 0.25, attack: 0.3 });
       for (let i = 0; i < 10; i++) tone({ type: 'triangle', f: 600 + Math.random() * 700, dur: 0.12, vol: 0.03, delay: 0.2 + Math.random() * 1.6 });
+    },
+
+    // ---- Mom
+    mop() {
+      noise({ f: 900, f2: 2200, ftype: 'bandpass', q: 1.2, dur: 0.18, vol: 0.16 });
+    },
+    crinkle() {
+      for (let i = 0; i < 6; i++) noise({ f: 5000, ftype: 'highpass', dur: 0.03, vol: 0.12, delay: i * 0.04 + Math.random() * 0.02 });
+    },
+    squeegee() {
+      tone({ type: 'sine', f: 1300, f2: 1900, dur: 0.35, vol: 0.07, vib: [40, 160] });
+    },
+    tsk() {
+      noise({ f: 6000, ftype: 'highpass', dur: 0.02, vol: 0.3 });
+      noise({ f: 6000, ftype: 'highpass', dur: 0.02, vol: 0.3, delay: 0.12 });
     },
 
     // Alex, shouting a warning from where she's hiding

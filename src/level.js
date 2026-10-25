@@ -66,6 +66,7 @@
   const CHANDELIER = { x: 2376, y: 162, w: 40, h: 22 };
   const ROOMBA = { x0: 800, x1: 962 };
   const DOOR_X = 4568;
+  const MOM_X = 1338;
 
   // Where things happen. Alex shouts a warning (a picture, never words) from wherever she's hiding.
   const TRIGGERS = [
@@ -322,6 +323,8 @@
       this.disks = DISKS.map((d, i) => Object.assign({ i, got: this.disksGot.has(i) }, d));
       this.keyGot = false;
       this.giftGot = false;
+      // Mom, at the stove, making casserole
+      this.mom = { pose: 'stir', face: -1, t: 0, until: 0, waved: idx > 1, scolded: idx > 1 };
       ui.bubble.hide();
     }
 
@@ -412,6 +415,7 @@
       }
       if (this.caught) this.caughtT += dt;
       if (this.fatal) this.fatal.update(dt);
+      if (mode === 'play') this.updateMom(dt);
       // camera: a little look-ahead, and widen to keep him in frame when he's close
       let lead = z.face > 0 ? 190 : 290;
       if (z.face > 0 && b.state !== 'hidden' && z.x - b.x < 260) lead = EC.clamp(z.x - b.x + 40, 190, 270);
@@ -578,6 +582,37 @@
       }
     }
 
+    // She waves at Zach. She points at her husband, and he stops.
+    updateMom(dt) {
+      const m = this.mom;
+      const z = this.z;
+      const b = this.b;
+      m.t += dt;
+      if (this.fatal) return;
+      if (!m.waved && Math.abs(z.x - MOM_X) < 80) {
+        m.waved = true;
+        m.pose = 'wave';
+        m.face = 1;
+        m.until = m.t + 1.3;
+        sfx.blip('mom');
+        setTimeout(() => sfx.blip('mom'), 90);
+      }
+      if (!m.scolded && b.state === 'chase' && b.x + 30 >= MOM_X - 30 && b.x < MOM_X + 30) {
+        m.scolded = true;
+        m.pose = 'point';
+        m.face = -1;
+        m.until = m.t + 1.4;
+        b.state = 'scolded';
+        b.t = 1.0;
+        sfx.tsk();
+      }
+      if (m.until && m.t > m.until) {
+        m.until = 0;
+        m.pose = 'stir';
+        m.face = -1;
+      }
+    }
+
     apologize() {
       this.stats.apologies++;
       ui.bubble.say(EC.pick(APOLOGIES), 0.85);
@@ -624,6 +659,7 @@
           return;
         case 'emerge':
         case 'roar':
+        case 'scolded':
           b.t -= dt;
           if (b.t <= 0) b.state = 'chase';
           break;
@@ -1098,6 +1134,13 @@
         R(g, x - 18, FLOOR - 9, 8, 3, '#8a5a38');
         R(g, x + 10, FLOOR - 8, 10, 2, '#efe7d6');
       });
+      // Mom at the stove (unless she's busy cleaning up after him)
+      if (!this.fatal && MOM_X > cam - 30 && MOM_X < cam + EC.W + 30) {
+        const m = this.mom;
+        const pose = m.pose === 'stir' ? (Math.floor(t * 3) % 2 ? 'stir' : 'idle') : m.pose;
+        art.put(g, art.mom(pose, 0), MOM_X, FLOOR, { flip: m.face < 0 });
+        if (m.pose === 'stir' && Math.floor(t * 2) % 2) R(g, 1300 + Math.round(Math.sin(t * 3) * 2), FLOOR - 48 - ((t * 20) % 10), 2, 2, 'rgba(255,255,255,0.5)');
+      }
       // lane furniture
       for (const s of this.solids) {
         if (!s.active || !s.spr) continue;
@@ -1343,6 +1386,10 @@
         case 'grab':
           o = { still: true, arm: 'fwd', armB: 'swing1', head: 'roar', socks: !b.slippers };
           head = 'roar';
+          break;
+        case 'scolded':
+          o = { still: true, arm: 'down', armB: 'down', head: 'low', drop: 6, socks: !b.slippers };
+          head = 'low';
           break;
         default:
           if (!b.slippers) o.arm = 'hold';

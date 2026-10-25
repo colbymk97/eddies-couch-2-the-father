@@ -32,6 +32,10 @@
       this.gary = 0;
       this.red = 0;
       this.glass = null;
+      this.mom = null;
+      this.plastic = 0;
+      this.wipe = 0;
+      this.momScore = 0;
       // The script starts running inside the Cutscene constructor, so park any camera moves until it exists.
       const parked = [];
       this.cs = { tween: (...args) => parked.push(args) };
@@ -164,6 +168,24 @@
       this.stamp = { text, t: 0 };
       sfx.stamp();
     }
+    // Mom, walking somewhere with purpose.
+    momWalk(x) {
+      this.mom.to = x;
+    }
+    // Where the worst of it is.
+    messX() {
+      const low = this.pieces.filter((p) => !p.hold && p.y > FLOOR - 60);
+      if (!low.length) return this.beast.x + 50;
+      return low.reduce((a, p) => a + p.x, 0) / low.length;
+    }
+    mopAt(x) {
+      this.decals = this.decals.filter((d) => {
+        if (d.kind === 'hole' || d.kind === 'crater') return true;
+        if (d.kind === 'pool') return Math.abs(d.x - x) > 30;
+        if (d.kind === 'splat') return d.y < FLOOR - 46 || Math.abs(d.x - x) > 30;
+        return Math.abs(d.x - x) > 30;
+      });
+    }
     viewBounds() {
       const half = EC.W / 2 / this.cam.z;
       return [this.cam.x - half + 6, this.cam.x + half - 6];
@@ -233,6 +255,19 @@
         if (dcl.kind === 'pool' && dcl.w < dcl.max) dcl.w = Math.min(dcl.max, dcl.w + d * 30);
         if (dcl.kind === 'splat' && dcl.drip < dcl.dripMax) dcl.drip = Math.min(dcl.dripMax, dcl.drip + d * 8);
       }
+      const m = this.mom;
+      if (m && m.to != null) {
+        const dx = m.to - m.x;
+        if (Math.abs(dx) < 1) {
+          m.x = m.to;
+          m.to = null;
+        } else {
+          m.face = dx > 0 ? 1 : -1;
+          const mv = Math.min(Math.abs(dx), (m.speed || 150) * d);
+          m.x += Math.sign(dx) * mv;
+          m.dist += mv;
+        }
+      }
       this.blood.update(d);
       this.bits.update(d);
       if (this.stamp) this.stamp.t += dt;
@@ -287,6 +322,25 @@
         art.put(g, p.spr, p.x, p.y, { rot: p.rot, sx, sy: p.sy, flip: p.flip, alpha: p.alpha });
         if (p.clipY != null) g.restore();
       }
+      // like the furniture: covered in plastic
+      if (this.plastic > 0) {
+        g.globalAlpha = this.plastic;
+        for (const p of this.pieces) {
+          if (p.hold || p.y < FLOOR - 50 || p.spr === art.gib('framed')) continue;
+          const hw = Math.ceil(p.spr.w / 2) + 3;
+          const top = Math.round(Math.min(p.y - p.spr.h / 2, FLOOR - 8)) - 3;
+          R(g, Math.round(p.x - hw), top, hw * 2, FLOOR - top + 1, 'rgba(225,238,255,0.42)');
+          R(g, Math.round(p.x - hw), top, hw * 2, 1, 'rgba(255,255,255,0.8)');
+          R(g, Math.round(p.x - hw + 2), top + 2, 1, 3, 'rgba(255,255,255,0.8)');
+          R(g, Math.round(p.x + hw - 4), top + 4, 1, 5, 'rgba(255,255,255,0.6)');
+        }
+        g.globalAlpha = 1;
+      }
+      const m = this.mom;
+      if (m) {
+        const pose = m.to != null ? 'walk' : m.pose;
+        art.put(g, art.mom(pose, Math.floor(m.dist / 6)), m.x, FLOOR, { flip: m.face < 0 });
+      }
       this.blood.draw(g, 0);
       this.bits.draw(g, 0);
     }
@@ -304,6 +358,8 @@
       }
       if (this.glass) this.drawGlass(g);
       if (this.gary > 0) this.drawGary(g);
+      if (this.momScore > 0) this.drawMomScore(g);
+      if (this.wipe > 0 && this.wipe < 1) this.drawWipe(g);
       if (this.stamp) {
         const s = this.stamp;
         const k = Math.min(1, s.t / 0.16);
@@ -330,15 +386,46 @@
     drawGlass(g) {
       const G = this.glass;
       const slide = Math.min(60, G.t * 14);
+      // Mom's rag clears everything to the left of where it's been
+      const clearX = this.wipe > 0 ? -40 + this.wipe * (EC.W + 80) : -1e4;
       g.save();
-      g.globalAlpha = Math.max(0, Math.min(1, 4 - G.t * 0.6));
       for (const s of G.splats) {
+        if (s.x < clearX) continue;
         g.fillStyle = s.c;
         g.fillRect(s.x, s.y + slide * s.k, s.w, s.h);
         if (s.drip) g.fillRect(s.x + 1, s.y + slide * s.k + s.h, 2, s.drip + slide * 0.6);
       }
-      art.put(g, art.gib('head'), G.x, G.y + slide, { sx: G.sx, sy: G.sy, rot: 0.15 });
+      if (G.x + 30 > clearX) art.put(g, art.gib('head'), G.x, G.y + slide, { sx: G.sx, sy: G.sy, rot: 0.15 });
       g.restore();
+    }
+    // A pink sleeve and a yellow rag, wiping the inside of the TV.
+    drawWipe(g) {
+      const x = -40 + this.wipe * (EC.W + 80);
+      const y = 120 + Math.sin(this.wipe * Math.PI * 6) * 26;
+      R(g, x - 70, y + 6, 70, 18, C.mCardi);
+      R(g, x - 70, y + 6, 70, 3, C.mCardiS);
+      R(g, x - 4, y + 4, 12, 20, C.aSkin);
+      R(g, x - 2, y - 6, 30, 30, '#f2d14a');
+      R(g, x, y - 4, 26, 3, '#ffe27a');
+      R(g, x + 4, y + 8, 18, 2, '#d9b43a');
+      R(g, x + 6, y + 16, 16, 2, '#d9b43a');
+    }
+    // Mom has notes.
+    drawMomScore(g) {
+      const k = EC.clamp(this.momScore, 0, 1.2);
+      const fx = 286;
+      const fy = EC.H + 10 - 72 * k;
+      art.put(g, art.mom('score', 0), fx, fy, { sx: 2, sy: 2 });
+      const cx = fx + 8;
+      const cy = fy - 84;
+      R(g, cx - 1, cy + 24, 3, 14, C.woodS);
+      R(g, cx - 12, cy - 1, 24, 28, C.ink);
+      R(g, cx - 11, cy, 22, 26, '#ffffff');
+      g.font = '400 15px ' + EC.FONT.display;
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillStyle = '#3d6fc4';
+      g.fillText('4', cx, cy + 14);
     }
     // Gary from church, beaming, scoring it.
     drawGary(g) {
@@ -387,6 +474,94 @@
     }
   }
 
+  // ================================================================ Mom cleans up
+  // She has done this before. She will do it again.
+  function* aftermath(F, cs, how) {
+    if (how === 'wipe') {
+      // the camera got the worst of it
+      yield 0.6;
+      sfx.squeegee();
+      cs.tween(F, { wipe: 1 }, 1.4, EC.ease.inOut);
+      yield 0.7;
+      sfx.squeegee();
+      yield 0.8;
+      F.glass = null;
+      yield 0.5;
+      return;
+    }
+    if (how === 'score') {
+      cs.tween(F, { momScore: 1 }, 0.45, EC.ease.outBack);
+      yield 0.5;
+      sfx.tsk();
+      yield 1.4;
+      return;
+    }
+    const [l, r] = F.viewBounds();
+    F.mom = { x: r + 16, face: -1, pose: 'sigh', dist: 0, to: null, speed: 150 };
+    const m = F.mom;
+    if (how === 'frame') {
+      const frame = F.pieces.find((p) => p.spr === art.gib('framed'));
+      if (frame) {
+        F.momWalk(frame.x + 16);
+        yield () => m.to == null;
+        m.face = -1;
+        m.pose = 'score';
+        for (const rot of [0.05, -0.02, 0]) {
+          frame.rot = rot;
+          sfx.click();
+          yield 0.28;
+        }
+        m.pose = 'sigh';
+        yield 0.3;
+      }
+    }
+    if (how === 'head') {
+      const head = F.pieces.find((p) => p.spr === art.gib('head') || p.spr === art.gib('headBlink'));
+      const body = F.pieces.find((p) => p.spr === art.gib('body'));
+      if (head && body) {
+        F.momWalk(head.x + 12);
+        yield () => m.to == null;
+        m.face = -1;
+        m.pose = 'hold';
+        head.phys = false;
+        cs.tween(head, { x: head.x + 4, y: FLOOR - 22, rot: 0 }, 0.25);
+        yield 0.3;
+        // she carries it over and puts it back where it goes
+        const neckX = body.x + (body.rot ? 16 : 0);
+        F.momWalk(neckX + 12);
+        const hs = cs.t;
+        yield () => {
+          head.x = m.x - 8;
+          return m.to == null || cs.t - hs > 2;
+        };
+        cs.tween(head, { x: neckX, y: body.rot ? body.y : body.y - 16, rot: body.rot || 0 }, 0.3);
+        yield 0.35;
+        sfx.pat();
+        m.pose = 'sigh';
+        yield 0.4;
+      }
+    }
+    // mop
+    const mess = EC.clamp(F.messX(), l + 30, r - 30);
+    F.momWalk(mess + 18);
+    yield () => m.to == null;
+    m.face = -1;
+    for (let i = 0; i < 6; i++) {
+      m.pose = i % 2 ? 'mop2' : 'mop';
+      m.x -= 3;
+      F.mopAt(m.x - 8);
+      sfx.mop();
+      yield 0.22;
+    }
+    // and plastic over whatever's left
+    m.pose = 'sigh';
+    sfx.crinkle();
+    cs.tween(F, { plastic: 1 }, 0.3);
+    yield 0.5;
+    sfx.pat();
+    yield 0.6;
+  }
+
   // ================================================================ the eight
   // 1. Head-first into the floorboards. The legs keep going for a while.
   function* lawnDart(F, cs) {
@@ -432,7 +607,7 @@
     yield 0.18;
     sfx.pat();
     F.stampIt('LAWN DARTED.');
-    yield 1.5;
+    yield* aftermath(F, cs, 'mop');
   }
 
   // 2. Folded up like a recliner. There's a lever.
@@ -483,7 +658,7 @@
     yield 0.7;
     sfx.pat();
     F.stampIt('RECLINED.');
-    yield 1.5;
+    yield* aftermath(F, cs, 'mop');
   }
 
   // 3. Through the ceiling. Something comes back down.
@@ -533,7 +708,7 @@
     F.beast.jitter = 0;
     yield 0.8;
     F.stampIt('PUNTED.');
-    yield 1.5;
+    yield* aftermath(F, cs, 'mop');
   }
 
   // 4. Stomped flat, peeled up like a sticker, framed, squared up, patted once.
@@ -597,7 +772,7 @@
     yield 0.15;
     frame.y -= 1;
     F.stampIt('FRAMED.');
-    yield 1.5;
+    yield* aftermath(F, cs, 'frame');
   }
 
   // 5. Pulled apart like a wishbone, in slow motion. He makes a wish.
@@ -637,7 +812,7 @@
     sfx.wish();
     yield 1.0;
     F.stampIt('WISHBONED.');
-    yield 1.5;
+    yield* aftermath(F, cs, 'mop');
   }
 
   // 6. Squeezed until the head pops like a cork. The body takes a lap. The head blinks.
@@ -713,7 +888,7 @@
     yield 0.15;
     F.swap(head, 'head');
     F.stampIt('POPPED.');
-    yield 1.5;
+    yield* aftermath(F, cs, 'head');
   }
 
   // 7. Helicoptered by the ankle until things come off. One of them hits the camera. He tidies up.
@@ -782,7 +957,7 @@
     yield 0.35;
     sfx.pat();
     F.stampIt('TIDIED UP.');
-    yield 1.6;
+    yield* aftermath(F, cs, 'wipe');
   }
 
   // 8. Punched to pieces, juggled, slam-dunked. Gary from church scores it.
@@ -852,7 +1027,7 @@
     sfx.cheer();
     yield 1.9;
     F.stampIt('FLAWLESS.');
-    yield 1.7;
+    yield* aftermath(F, cs, 'score');
   }
 
   const LIST = [

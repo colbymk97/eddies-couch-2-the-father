@@ -13,7 +13,7 @@
     display: '"Bungee", "Arial Black", Impact, sans-serif',
     ui: '"Pixelify Sans", "Trebuchet MS", Verdana, sans-serif',
   };
-  const NAMES = { zach: 'ZACH', alex: 'ALEX', dad: 'DAD', beast: "GIRLFRIEND'S DAD BEAST", phone: 'UNKNOWN NUMBER' };
+  const NAMES = { zach: 'ZACH', alex: 'ALEX', dad: 'DAD', mom: 'MOM', beast: "GIRLFRIEND'S DAD BEAST", phone: 'UNKNOWN NUMBER' };
 
   // ================================================================ runner
   // A script is a generator. It yields a number (seconds), 'line' (wait for the reader), or a function (wait until true).
@@ -95,6 +95,7 @@
       if (d.mode === 'seat') return { img: art.dadSeated({ remote: d.remote, glasses: d.glasses, eyes: d.eyes }).img, x: 23, y: 1, w: 18, h: 18 };
       return { img: art.dadStand({ pose: d.pose, buttons: d.buttons, glasses: d.glasses, eyes: d.eyes, stache: d.stache }).img, x: 11, y: 0, w: 18, h: 18 };
     }
+    if (who === 'mom') return { img: art.mom(poseOf(S.mom, 'idle'), 0).img, x: 4, y: 3, w: 17, h: 17 };
     if (who === 'beast') return { img: art.beastFront({ roar: true }).img, x: 22, y: 0, w: 40, h: 40 };
     if (who === 'phone') return { img: art.prop('phone').img, x: 0, y: 0, w: 7, h: 10 };
     return null;
@@ -121,7 +122,7 @@
   }
 
   // ================================================================ cameras
-  const SHOT_FOR = { dad: 'dad', zach: 'two', alex: 'two', beast: 'beast' };
+  const SHOT_FOR = { dad: 'dad', zach: 'two', alex: 'two', mom: 'mom', beast: 'beast' };
   function shotTarget(S, name) {
     const d = S.dad;
     const c = { x: EC.W / 2, y: EC.H / 2, z: 1 };
@@ -129,6 +130,7 @@
     else if (name === 'two') Object.assign(c, { x: (S.zach.x + S.alex.x) / 2 - 6, y: FY - 32, z: 2 });
     else if (name === 'beast') Object.assign(c, { x: d.x + 34, y: FY - 64, z: 1.5 });
     else if (name === 'clock') Object.assign(c, { x: 50, y: 124, z: 2.5 });
+    else if (name === 'mom' && S.mom) Object.assign(c, { x: S.mom.x + 46, y: FY - 40, z: 1.8 });
     else if (name === 'table') Object.assign(c, { x: 150, y: 166, z: 3 });
     const hw = EC.W / 2 / c.z;
     const hh = EC.H / 2 / c.z;
@@ -191,6 +193,7 @@
       door: 0,
       zach: { x: 452, face: -1, pose: 'grin', frame: 0, visible: false, to: null, speed: 70, hat: true, tilt: 0, arrived: false, dist: 0 },
       alex: { x: 470, face: -1, pose: 'smile', frame: 0, visible: false, to: null, speed: 70, hat: true, tilt: 0, arrived: false, dist: 0 },
+      mom: { x: -20, face: 1, pose: 'hold', frame: 0, visible: false, to: null, speed: 60, arrived: false, dist: 0 },
       dad: { mode: 'seat', x: 182, remote: true, glasses: true, eyes: 'calm', pose: 'down', buttons: 4, sy: 1, grow: 0, stache: false, stomp: false, roar: false },
       horn: 0,
       remote: null,
@@ -236,6 +239,7 @@
     S.t += dt;
     stepActor(S.zach, dt);
     stepActor(S.alex, dt);
+    stepActor(S.mom, dt);
     const ck = S.clock;
     if (ck.fast) {
       // time-lapse: the hands race, Dad does not move
@@ -286,6 +290,12 @@
 
   function drawActor(g, a, kind) {
     if (!a.visible) return;
+    if (kind === 'mom') {
+      // she carries the casserole everywhere, even while walking
+      const pose = a.to != null ? (a.pose.indexOf('hold') === 0 ? 'hold' : 'walk') : a.pose;
+      art.put(g, art.mom(pose, a.frame), a.x, FY, { flip: a.face < 0 });
+      return;
+    }
     const spr = kind === 'zach' ? art.zach(a.to != null ? 'walk' : a.pose, a.frame) : art.alex(a.to != null ? 'walk' : a.pose, a.frame);
     const flip = a.face < 0;
     art.put(g, spr, a.x, FY, { flip });
@@ -442,6 +452,11 @@
     R(g, 169, 189, 8, 1, '#f4f1ea');
     drawActor(g, S.alex, 'alex');
     drawActor(g, S.zach, 'zach');
+    drawActor(g, S.mom, 'mom');
+    if (S.mom.blown > 0) {
+      // the roar blows her hair back; the casserole is fine
+      for (let i = 0; i < 4; i++) R(g, S.mom.x - 14 - i * 5 - ((S.t * 90) % 6), FY - 32 + i * 4, 4, 1, 'rgba(255,255,255,0.6)');
+    }
     // party horn
     if (S.horn > 0.02) {
       const z = S.zach;
@@ -589,7 +604,9 @@
       porch: 1,
       beast: 0,
       beastLook: '',
-      zach: { x: 216, y: 196, face: 1, pose: 'hurt', rot: 0, visible: true, gift: false },
+      zach: { x: 216, y: 196, face: 1, pose: 'hurt', rot: 0, visible: true, gift: false, casserole: false },
+      mom: null,
+      toss: null,
       phone: 0,
       black: 1,
       parts: new EC.Particles(),
@@ -654,6 +671,16 @@
       R(g, dx + 5, dy + 35, dw - 10, dh - 42, C.wood);
       R(g, dx + dw - 7, dy + 40, 3, 4, C.brass);
     }
+    // Mom, in the doorway
+    if (E.mom && E.door > 0.05) {
+      g.save();
+      g.beginPath();
+      g.rect(dx, dy, dw, dh);
+      g.clip();
+      art.put(g, art.mom(E.mom.pose, 0), dx + dw / 2, dy + dh);
+      g.restore();
+    }
+    if (E.toss) art.put(g, art.prop(E.toss.kind), E.toss.x, E.toss.y, { rot: E.toss.rot });
     // porch light
     R(g, 244, 128, 8, 10, E.porch > 0.5 ? '#fff2b0' : '#5a5040');
     R(g, 243, 126, 10, 2, '#2a2a30');
@@ -663,6 +690,7 @@
     if (z && z.visible) {
       art.put(g, art.zach(z.pose, 0), z.x, z.y, { flip: z.face < 0, rot: z.rot });
       if (z.gift) art.put(g, art.prop('gift'), z.x + 9 * z.face, z.y - 9);
+      if (z.casserole) art.put(g, art.prop('casserole'), z.x - 9 * z.face, z.y - 14);
       if (E.phone > 0) {
         art.put(g, art.prop('phone'), z.x + 8 * z.face, z.y - 17);
         if (Math.floor(E.t * 10) % 2 === 0) art.glow(g, z.x + 8 * z.face, z.y - 17, 8, 'rgba(127,215,255,0.8)', 0.7);
@@ -978,6 +1006,23 @@
     S.zach.pose = 'shock';
     yield* say(cs, 'zach', 'WHO IS BRANDON?');
 
+    // Alex's mom comes in from the hallway with dinner. She has seen this before.
+    shot(S, 'wide');
+    S.mom.visible = true;
+    S.mom.pose = 'hold';
+    walkTo(S.mom, 92, 55);
+    yield () => S.mom.arrived;
+    S.mom.face = 1;
+    yield 0.3;
+    yield* say(cs, 'mom', 'Zachary! Are you two staying for casserole?');
+    S.zach.face = -1;
+    S.zach.pose = 'worry';
+    yield 0.4;
+    S.mom.pose = 'holdStern';
+    sfx.tsk();
+    yield 0.6;
+    yield* say(cs, 'mom', 'Honey. Not in the good cardigan.', { cam: 'mom' });
+
     // One slipper on the coffee table. Full height. The roar.
     S.zach.face = -1;
     shot(S, 'beast');
@@ -988,6 +1033,8 @@
     S.dad.roar = true;
     sfx.roar(1.9);
     EC.fx.shake(5, 1.6);
+    S.mom.blown = 1;
+    S.mom.pose = 'holdShock';
     yield 0.6;
     shot(S, 'wide');
     S.smoke = 6;
@@ -997,6 +1044,8 @@
     cs.tween(S, { gary: 1 }, 0.3);
     yield 2.6;
     cs.tween(S, { gary: 0 }, 0.3);
+    S.mom.blown = 0;
+    S.mom.pose = 'holdStern';
     yield 0.3;
     sfx.roar(1.4);
     EC.fx.shake(3, 1.2);
@@ -1084,17 +1133,51 @@
     if (!info.gift) {
       zz.pose = 'shock';
       yield* say(cs, 'zach', 'The gift. I left the gift in there.');
-      for (let i = 0; i < 3; i++) {
-        S.porch = 1;
-        sfx.click();
-        yield 0.35;
-        S.porch = 0;
-        sfx.click();
-        yield 0.35;
-      }
-      S.porch = 1;
-      yield 0.8;
+      yield 0.4;
     }
+    // The porch light comes back on. It's Mom.
+    S.porch = 1;
+    sfx.click();
+    yield 0.4;
+    S.mom = { pose: 'hold' };
+    cs.tween(S, { door: 1 }, 0.5);
+    sfx.creak();
+    yield 0.7;
+    zz.face = -1;
+    zz.pose = 'worry';
+    const gift = !info.gift;
+    S.mom.pose = gift ? 'wave' : 'hold';
+    yield* say(cs, 'mom', gift ? 'You forgot this, sweetie.' : 'Take some casserole for the road, sweetie.');
+    // she tosses it down the steps
+    S.mom.pose = 'idle';
+    S.toss = { kind: gift ? 'gift' : 'casserole', x: 216, y: 160, rot: 0 };
+    const tz = S.toss;
+    const ts = cs.t;
+    sfx.whoosh();
+    yield () => {
+      const k = Math.min(1, (cs.t - ts) / 0.7);
+      tz.x = EC.lerp(216, zz.x - 2, k);
+      tz.y = EC.lerp(160, LY - 14, k) - Math.sin(k * Math.PI) * 30;
+      tz.rot = k * Math.PI * 2;
+      return k >= 1;
+    };
+    S.toss = null;
+    if (gift) zz.gift = true;
+    else zz.casserole = true;
+    sfx.land();
+    zz.pose = 'grin';
+    yield 0.5;
+    S.mom.pose = 'point';
+    yield* say(cs, 'mom', 'And Zachary? Find the game.');
+    cs.tween(S, { door: 0 }, 0.6);
+    yield 0.65;
+    S.mom = null;
+    sfx.click();
+    yield 0.5;
+    S.porch = 0;
+    sfx.lightsOff();
+    zz.pose = 'worry';
+    yield 0.8;
     zz.pose = 'phone';
     zz.face = 1;
     S.phone = 1;

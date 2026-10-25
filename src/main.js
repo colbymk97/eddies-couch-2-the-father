@@ -204,7 +204,7 @@
       ['Hit by household objects', s.hits],
       ['Apologies', s.apologies + ' (accepted: 0)'],
       ['Eddie’s Couch backups', disks + '/' + total],
-      ['The gift', level.hasGift ? 'Delivered' : 'Left behind'],
+      ['The gift', level.hasGift ? 'Delivered' : 'Mom brought it out'],
     ];
     ui.panel.show({
       title: 'YOU ESCAPED THE HOUSE.',

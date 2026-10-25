@@ -42,6 +42,17 @@
     aBoot: '#8a5a3a',
     aBootS: '#6a4228',
     lips: '#d0606a',
+    // Alex's mom: a set-and-sprayed honey bob, pink cardigan, floral apron, reading glasses on a chain
+    mHair: '#d8b36a',
+    mHairS: '#b38e48',
+    mHairL: '#efd49a',
+    mCardi: '#e9a0b4',
+    mCardiS: '#c97f95',
+    mSlacks: '#8aa3c9',
+    mSlacksS: '#6f87ae',
+    mShoe: '#efe6d2',
+    apron: '#fbf6ea',
+    mLips: '#c8506a',
     pink: '#ff5aa5',
     yellow: '#ffd23e',
     blue: '#3fa9ff',
@@ -446,6 +457,132 @@
     return sprite('a-' + pose, 24, 34, (g) => alexBody(g, APOSE[pose] || APOSE.idle));
   };
   art.alexHatAt = { x: 1, y: -28 };
+
+  // ================================================================ ALEX'S MOM
+  function momHead(g, x, y, face) {
+    R(g, x - 2, y, 12, 9, C.mHair);
+    R(g, x - 1, y - 2, 10, 3, C.mHair);
+    R(g, x - 3, y + 5, 4, 5, C.mHairS);
+    R(g, x, y + 1, 9, 9, C.aSkin);
+    R(g, x, y, 9, 3, C.mHair);
+    R(g, x + 6, y + 1, 3, 2, C.mHair);
+    R(g, x, y, 3, 6, C.mHair);
+    R(g, x + 1, y - 1, 6, 1, C.mHairL);
+    R(g, x + 9, y + 5, 1, 2, C.aSkin);
+    R(g, x + 2, y + 9, 7, 1, C.aSkinS);
+    R(g, x + 3, y + 5, 2, 2, C.aSkinS);
+    R(g, x + 3, y + 7, 1, 1, '#f4f1ea');
+    // reading glasses, low on the nose, on a chain
+    R(g, x + 5, y + 5, 4, 1, C.glass);
+    R(g, x + 5, y + 6, 1, 1, C.glass);
+    R(g, x + 8, y + 6, 1, 1, C.glass);
+    R(g, x + 4, y + 6, 1, 4, C.brassS);
+    switch (face) {
+      case 'stern':
+        R(g, x + 6, y + 4, 1, 1, C.ink);
+        R(g, x + 5, y + 3, 4, 1, C.mHairS);
+        R(g, x + 6, y + 8, 3, 1, C.ink);
+        break;
+      case 'shock':
+        R(g, x + 6, y + 3, 1, 2, C.ink);
+        R(g, x + 6, y + 7, 2, 2, C.mouth);
+        break;
+      case 'sigh':
+        R(g, x + 5, y + 4, 2, 1, C.ink);
+        R(g, x + 6, y + 8, 2, 1, C.mLips);
+        break;
+      default:
+        R(g, x + 6, y + 3, 1, 2, C.ink);
+        R(g, x + 5, y + 7, 4, 1, C.mLips);
+        R(g, x + 8, y + 6, 1, 1, C.mLips);
+    }
+  }
+  function momBody(g, o) {
+    const b = o.bob | 0;
+    const lf = o.lf || [0, 0];
+    const lb = o.lb || [0, 0];
+    const arms = o.arms || 'down';
+    zLeg(g, 10 + lb[0], 25 + b, 9 - b, lb[1], C.mSlacksS, C.mShoe);
+    if (arms !== 'mop') {
+      R(g, 9, 17 + b, 2, 6, C.mCardiS);
+      R(g, 9, 23 + b, 2, 2, C.aSkinS);
+    }
+    // cardigan, blouse collar, floral apron
+    R(g, 8, 16 + b, 8, 10, C.mCardi);
+    R(g, 8, 16 + b, 2, 10, C.mCardiS);
+    R(g, 13, 16 + b, 3, 2, C.shirtW);
+    R(g, 14, 18 + b, 1, 1, '#f4f1ea');
+    R(g, 11, 19 + b, 6, 9, C.apron);
+    R(g, 12, 21 + b, 1, 1, '#5b8fd9');
+    R(g, 15, 22 + b, 1, 1, '#e2b84a');
+    R(g, 13, 24 + b, 1, 1, '#5b8fd9');
+    R(g, 16, 26 + b, 1, 1, '#e2b84a');
+    R(g, 11, 19 + b, 6, 1, '#f0c8d4');
+    R(g, 8, 21 + b, 4, 1, C.apron);
+    zLeg(g, 11 + lf[0], 25 + b, 9 - b, lf[1], C.mSlacks, C.mShoe);
+    momHead(g, 8, 7 + b, o.face || 'ok');
+    switch (arms) {
+      case 'wave':
+        R(g, 14, 15 + b, 3, 3, C.mCardi);
+        R(g, 17, 9 + b, 2, 7, C.mCardi);
+        R(g, 17, 7 + b, 2, 2, C.aSkin);
+        break;
+      case 'point':
+        R(g, 13, 18 + b, 7, 2, C.mCardi);
+        R(g, 20, 18 + b, 2, 2, C.aSkin);
+        R(g, 22, 18 + b, 2, 1, C.aSkin);
+        break;
+      case 'hold':
+        R(g, 12, 18 + b, 2, 4, C.mCardi);
+        R(g, 13, 21 + b, 5, 2, C.mCardi);
+        R(g, 15, 18 + b, 9, 4, '#f4f1ea');
+        R(g, 16, 17 + b, 7, 2, '#e0913a');
+        R(g, 15, 20 + b, 9, 1, '#3d6fc4');
+        R(g, 17, 21 + b, 2, 2, C.aSkin);
+        break;
+      case 'mop':
+      case 'mop2': {
+        const m = arms === 'mop2' ? 3 : 0;
+        R(g, 12, 19 + b, 6, 2, C.mCardi);
+        R(g, 17, 19 + b, 2, 2, C.aSkin);
+        for (let i = 0; i < 13; i++) R(g, 16 + Math.round(i * 0.35) + Math.round((m * i) / 13), 17 + b + i, 1, 1, C.woodL);
+        R(g, 17 + m, 29, 8, 3, '#e8e2d2');
+        for (let i = 0; i < 8; i++) R(g, 17 + m + i, 32, 1, 2, i % 2 ? '#c9c0ac' : '#e8e2d2');
+        break;
+      }
+      case 'score':
+        R(g, 14, 15 + b, 3, 3, C.mCardi);
+        R(g, 17, 7 + b, 2, 9, C.mCardi);
+        R(g, 17, 5 + b, 2, 2, C.aSkin);
+        break;
+      default:
+        R(g, 12, 17 + b, 2, 6, C.mCardi);
+        R(g, 12, 23 + b, 2, 2, C.aSkin);
+    }
+  }
+  const MWALK = [
+    { lf: [2, 0], lb: [-2, 0] },
+    { lf: [0, 1], lb: [0, 0], bob: 1 },
+    { lf: [-2, 0], lb: [2, 0] },
+    { lf: [0, 0], lb: [0, 1], bob: 1 },
+  ];
+  const MPOSE = {
+    idle: { lf: [1, 0], lb: [-1, 0] },
+    hold: { lf: [1, 0], lb: [-1, 0], arms: 'hold' },
+    holdShock: { lf: [1, 0], lb: [-1, 0], arms: 'hold', face: 'shock' },
+    holdStern: { lf: [1, 0], lb: [-1, 0], arms: 'hold', face: 'stern' },
+    wave: { lf: [1, 0], lb: [-1, 0], arms: 'wave' },
+    point: { lf: [2, 0], lb: [-2, 0], arms: 'point', face: 'stern' },
+    stir: { lf: [1, 0], lb: [-1, 0], arms: 'point', face: 'ok' },
+    mop: { lf: [2, 0], lb: [-2, 0], arms: 'mop', face: 'sigh' },
+    mop2: { lf: [1, 0], lb: [-1, 0], arms: 'mop2', face: 'sigh' },
+    score: { lf: [1, 0], lb: [-1, 0], arms: 'score', face: 'stern' },
+    sigh: { lf: [1, 0], lb: [-1, 0], face: 'sigh' },
+  };
+  art.mom = function (pose, frame) {
+    if (pose === 'walk') return sprite('m-walk' + (frame & 3), 26, 34, (g) => momBody(g, MWALK[frame & 3]));
+    return sprite('m-' + pose, 26, 34, (g) => momBody(g, MPOSE[pose] || MPOSE.idle));
+  };
 
   // Party hats: 9x11, anchored at the brim.
   art.hat = function (who) {
