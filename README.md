@@ -28,7 +28,7 @@ Open `index.html` in a browser. There's no build step, no dependencies, and no s
 - **Alex shouts warnings** from where she's hiding near the camera: a picture (jump, duck, go, the key's behind you), never words, so nothing covers the play area.
 - **He throws things:** a casserole, the TV remote, the gravy boat, the commemorative plates.
 - **The front door is locked.** The key is on the hall table, right next to the birthday gift. Taking the gift slows you down, and the ending notices whether you have it.
-- **Five Eddie's Couch backup disks** are hidden on top of things. Brandon notices if you get all of them.
+- **Five Eddie's Couch backup disks** are hidden on top of things. Get all of them and Zach leaves one for Brandon.
 
 Getting caught sends you back to the start of the room you're in. Disks you've found stay found.
 
@@ -53,6 +53,7 @@ Alex's mom is completely unbothered by all of this.
 - **In the kitchen** she's stirring a pot. She waves when Zach runs past. If the Beast comes through while she's there, she points at him and he stops dead for a second, head down.
 - **After every death** she comes in with a mop and a roll of plastic sheeting and tidies up. She hangs the frame back up straight, carries the head back to its body, wipes the TV screen, and holds up her own scorecard for Flawless: a 4.
 - **At the end** the porch light comes on and she hands Zach a casserole for the road, or the gift if he left it behind. Then: "And Zachary? Find the game."
+- **Brandon** is buried in the front yard, out by the mailbox, wearing his party hat. She keeps a casserole on him. When Zach backs into the headstone, she opens the door just long enough to say "Mind Brandon, sweetie."
 
 ## Code
 

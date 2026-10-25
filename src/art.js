@@ -325,6 +325,7 @@
     horn: { lf: [1, 0], lb: [-2, 0], af: [3, -6], face: 'blow' },
     poof: { lf: [1, 0], lb: [-2, 0], af: [3, -8], ab: [-2, -7], face: 'grin' },
     turn: { lf: [1, 0], lb: [-2, 0], face: 'shock' },
+    down: { lf: [1, 0], lb: [-2, 0], face: 'down' },
   };
   art.zach = function (pose, frame) {
     if (pose === 'duck' || pose === 'slide') return sprite('z-' + pose, 24, 34, pose === 'duck' ? zachDuck : zachSlide);
@@ -585,13 +586,15 @@
   };
 
   // Party hats: 9x11, anchored at the brim.
+  // Brandon's has been out in the weather a while.
   art.hat = function (who) {
-    const a = who === 'alex' ? C.blue : C.pink;
-    const b = who === 'alex' ? '#f4f1ea' : C.yellow;
+    const a = { alex: C.blue, brandon: '#6f9a86' }[who] || C.pink;
+    const b = { alex: '#f4f1ea', brandon: '#cfc8a8' }[who] || C.yellow;
+    const pom = { alex: C.yellow, brandon: '#cfc8a8' }[who] || '#ffffff';
     return sprite('hat-' + who, 9, 11, (g) => {
       const rows = [[4, 1], [4, 1], [3, 3], [3, 3], [2, 5], [2, 5], [1, 7], [1, 7], [0, 9]];
       rows.forEach(([x, w], i) => R(g, x, i + 2, w, 1, Math.floor(i / 2) % 2 ? b : a));
-      R(g, 3, 0, 3, 2, who === 'alex' ? C.yellow : '#ffffff');
+      R(g, 3, 0, 3, 2, pom);
     });
   };
 
@@ -1175,6 +1178,39 @@
       R(g, 4, 2, 2, 1, '#b8642a');
       R(g, 10, 1, 2, 1, '#b8642a');
     }, true],
+    // Brandon. In the front yard. Anchored at the middle of the base.
+    headstone: [37, 26, (g) => {
+      const stone = '#9a98a8';
+      const lite = '#b9b7c6';
+      const shade = '#76748a';
+      R(g, 11, 0, 15, 1, stone);
+      R(g, 7, 1, 23, 1, stone);
+      R(g, 4, 2, 29, 2, stone);
+      R(g, 2, 4, 33, 18, stone);
+      R(g, 2, 4, 2, 18, lite);
+      R(g, 4, 2, 2, 2, lite);
+      R(g, 33, 4, 2, 18, shade);
+      R(g, 0, 22, 37, 4, shade);
+      R(g, 0, 22, 37, 1, lite);
+      // a little chisel font, just the letters it needs
+      const GL = {
+        B: ['110', '101', '110', '101', '110'],
+        R: ['110', '101', '110', '101', '101'],
+        A: ['010', '101', '111', '101', '101'],
+        N: ['1001', '1101', '1011', '1001', '1001'],
+        D: ['110', '101', '101', '101', '110'],
+        O: ['111', '101', '101', '101', '111'],
+      };
+      let x = 4;
+      'BRANDON'.split('').forEach((ch) => {
+        GL[ch].forEach((row, y) => {
+          for (let i = 0; i < row.length; i++) if (row[i] === '1') R(g, x + i, 7 + y, 1, 1, '#4a4858');
+        });
+        x += GL[ch][0].length + 1;
+      });
+      R(g, 12, 14, 13, 1, shade);
+      R(g, 14, 16, 9, 1, shade);
+    }],
     remote: [12, 5, (g) => {
       R(g, 0, 0, 12, 5, '#2b2b30');
       R(g, 9, 1, 2, 2, '#ff4040');

@@ -13,7 +13,7 @@
     display: '"Bungee", "Arial Black", Impact, sans-serif',
     ui: '"Pixelify Sans", "Trebuchet MS", Verdana, sans-serif',
   };
-  const NAMES = { zach: 'ZACH', alex: 'ALEX', dad: 'DAD', mom: 'MOM', beast: "GIRLFRIEND'S DAD BEAST", phone: 'UNKNOWN NUMBER' };
+  const NAMES = { zach: 'ZACH', alex: 'ALEX', dad: 'DAD', mom: 'MOM', beast: "GIRLFRIEND'S DAD BEAST" };
 
   // ================================================================ runner
   // A script is a generator. It yields a number (seconds), 'line' (wait for the reader), or a function (wait until true).
@@ -97,7 +97,6 @@
     }
     if (who === 'mom') return { img: art.mom(poseOf(S.mom, 'idle'), 0).img, x: 4, y: 3, w: 17, h: 17 };
     if (who === 'beast') return { img: art.beastFront({ roar: true }).img, x: 22, y: 0, w: 40, h: 40 };
-    if (who === 'phone') return { img: art.prop('phone').img, x: 0, y: 0, w: 7, h: 10 };
     return null;
   }
 
@@ -541,6 +540,9 @@
 
   // ================================================================ the front lawn (ending)
   const LY = 214;
+  // Brandon's spot, out by the mailbox
+  const GX = 352;
+  const GY = LY + 1;
   let lawnBg = null;
   function buildLawn() {
     const c = art.canvasOf(EC.W, EC.H);
@@ -607,7 +609,8 @@
       zach: { x: 216, y: 196, face: 1, pose: 'hurt', rot: 0, visible: true, gift: false, casserole: false },
       mom: null,
       toss: null,
-      phone: 0,
+      grave: { wob: 0, disk: null },
+      cam: { x: EC.W / 2, y: EC.H / 2, z: 1 },
       black: 1,
       parts: new EC.Particles(),
     };
@@ -685,16 +688,19 @@
     R(g, 244, 128, 8, 10, E.porch > 0.5 ? '#fff2b0' : '#5a5040');
     R(g, 243, 126, 10, 2, '#2a2a30');
     if (E.porch > 0.5) art.glow(g, 248, 134, 60, 'rgba(255,220,150,0.55)');
+    // Brandon. Mom keeps him in casseroles.
+    const gr = E.grave || {};
+    art.put(g, art.prop('headstone'), GX, GY);
+    art.put(g, art.prop('casserole'), GX + 25, GY - 4);
+    art.put(g, art.hat('brandon'), GX + 4, GY - 25, { rot: 0.22 + Math.sin(E.t * 26) * (gr.wob || 0) });
+    if (gr.disk) art.put(g, art.prop('disk'), gr.disk.x, gr.disk.y, { rot: gr.disk.rot });
     // zach
     const z = E.zach;
     if (z && z.visible) {
-      art.put(g, art.zach(z.pose, 0), z.x, z.y, { flip: z.face < 0, rot: z.rot });
+      const moving = z.pose === 'walk' || z.pose === 'run';
+      art.put(g, art.zach(z.pose, moving ? Math.floor(E.t * 12) : 0), z.x, z.y, { flip: z.face < 0, rot: z.rot });
       if (z.gift) art.put(g, art.prop('gift'), z.x + 9 * z.face, z.y - 9);
       if (z.casserole) art.put(g, art.prop('casserole'), z.x - 9 * z.face, z.y - 14);
-      if (E.phone > 0) {
-        art.put(g, art.prop('phone'), z.x + 8 * z.face, z.y - 17);
-        if (Math.floor(E.t * 10) % 2 === 0) art.glow(g, z.x + 8 * z.face, z.y - 17, 8, 'rgba(127,215,255,0.8)', 0.7);
-      }
     }
     if (E.parts) E.parts.draw(g, 0);
     g.restore();
@@ -769,7 +775,7 @@
   function* intro(S, cs) {
     // The house, early evening.
     S.view = 'ext';
-    S.ext = { door: 0, porch: 1, beast: 0, zach: null, phone: 0, dusk: true, t: 0, cam: { x: EC.W / 2, y: EC.H / 2, z: 1 } };
+    S.ext = { door: 0, porch: 1, beast: 0, zach: null, dusk: true, t: 0, cam: { x: EC.W / 2, y: EC.H / 2, z: 1 } };
     S.clock.run = false;
     S.black = 1;
     cs.tween(S, { black: 0 }, 1.2);
@@ -1178,18 +1184,76 @@
     sfx.lightsOff();
     zz.pose = 'worry';
     yield 0.8;
-    zz.pose = 'phone';
-    zz.face = 1;
-    S.phone = 1;
-    sfx.buzz();
-    yield 1.1;
-    const all = (info.disks || 0) >= info.disksTotal;
-    const text = all
-      ? 'hey. this is brandon. heard you got every backup of eddie’s couch out of there. further than i ever got.'
-      : 'hey. this is brandon. he does this every time someone promises him a game.';
-    yield* say(cs, 'phone', text, { voice: 'phone' });
+    // He backs away from the house, eyes on the door, and into something.
+    zz.face = -1;
+    zz.pose = 'walk';
+    cs.tween(zz, { x: GX - 24 }, 1.5, EC.ease.inOut);
+    yield 1.5;
     zz.pose = 'shock';
-    yield* say(cs, 'zach', 'WHO IS BRANDON?!');
+    sfx.bonk();
+    EC.fx.shake(1.5, 0.15);
+    S.grave.wob = 0.35;
+    cs.tween(S.grave, { wob: 0 }, 1.0, EC.ease.out);
+    yield 0.7;
+    // He turns around, steps back, and reads it.
+    zz.face = 1;
+    zz.pose = 'down';
+    cs.tween(zz, { x: GX - 34 }, 0.35, EC.ease.out);
+    cs.tween(S.cam, { x: GX - 12, y: LY - 16, z: 2.6 }, 1.4, EC.ease.inOut);
+    yield 1.6;
+    sfx.crickets();
+    yield 1.6;
+    yield* say(cs, 'zach', '...Oh.', { speed: 8 });
+    if ((info.disks || 0) >= info.disksTotal) {
+      // Every backup made it out. He leaves one with Brandon.
+      zz.pose = 'sorry';
+      yield 0.5;
+      const d = (S.grave.disk = { x: zz.x + 8, y: zz.y - 14, rot: 0 });
+      cs.tween(d, { x: GX - 8, y: GY - 5, rot: -0.25 }, 0.6, EC.ease.inOut);
+      yield 0.65;
+      sfx.pat();
+      yield 0.25;
+      sfx.pat();
+      yield 0.5;
+      zz.pose = 'down';
+      yield 0.8;
+    }
+    // The porch light comes on again.
+    S.porch = 1;
+    sfx.click();
+    cs.tween(S.cam, { x: 290, y: 172, z: 1.6 }, 0.6, EC.ease.inOut);
+    yield 0.5;
+    S.mom = { pose: 'point' };
+    cs.tween(S, { door: 1 }, 0.4);
+    sfx.creak();
+    yield 0.6;
+    yield* say(cs, 'mom', 'Mind Brandon, sweetie.');
+    cs.tween(S, { door: 0 }, 0.5);
+    yield 0.55;
+    S.mom = null;
+    sfx.click();
+    yield 0.3;
+    S.porch = 0;
+    sfx.lightsOff();
+    zz.pose = 'worry';
+    yield 0.7;
+    // He clears Brandon by a good three feet and does not stop.
+    cs.tween(S.cam, { x: EC.W / 2, y: EC.H / 2, z: 1 }, 1.0, EC.ease.inOut);
+    zz.pose = 'jump';
+    sfx.jump();
+    const jx = zz.x;
+    const js = cs.t;
+    yield () => {
+      const k = Math.min(1, (cs.t - js) / 0.55);
+      zz.x = EC.lerp(jx, GX + 32, k);
+      zz.y = LY - Math.sin(k * Math.PI) * 40;
+      return k >= 1;
+    };
+    zz.y = LY;
+    sfx.land();
+    zz.pose = 'run';
+    cs.tween(zz, { x: EC.W + 40 }, 0.7);
+    yield 0.5;
     cs.tween(S, { black: 0.55 }, 0.6);
     yield 0.6;
   };

@@ -147,7 +147,6 @@
     dad: { type: 'square', f: 175, vol: 0.05, filter: ['lowpass', 1400] },
     beast: { type: 'sawtooth', f: 72, vol: 0.16, crush: true },
     gary: { type: 'triangle', f: 330, vol: 0.08 },
-    phone: { type: 'sine', f: 1200, vol: 0.05 },
   };
 
   const sfx = (A.sfx = {
@@ -249,10 +248,6 @@
     sting() {
       [55, 58.27, 82.41, 110].forEach((f) => tone({ type: 'sawtooth', f, dur: 2.4, vol: 0.09, crush: true, attack: 0.02, hold: 1 }));
       noise({ f: 3000, f2: 120, dur: 1.6, vol: 0.4 });
-    },
-    buzz() {
-      tone({ type: 'sawtooth', f: 150, dur: 0.32, vol: 0.09, vib: [34, 30], filter: ['lowpass', 900] });
-      tone({ type: 'sawtooth', f: 150, dur: 0.32, vol: 0.09, vib: [34, 30], filter: ['lowpass', 900], delay: 0.45 });
     },
     pat() {
       noise({ f: 800, dur: 0.05, vol: 0.22 });
