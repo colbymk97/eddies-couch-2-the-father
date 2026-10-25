@@ -11,21 +11,37 @@
     skin: '#f1c493',
     skinS: '#d39b6b',
     skinD: '#a86f45',
-    zHair: '#5a3822',
-    zShirt: '#2f9d97',
-    zShirtS: '#1f716c',
-    zShirtL: '#57c6be',
-    jeans: '#3d5fa8',
-    jeansS: '#2b4479',
+    // Zach: dark hair pushed up, stubble, grey shawl-collar cardigan over a dark tee
+    zSkin: '#c08458',
+    zSkinS: '#9e6a44',
+    zSkinD: '#7a4d2e',
+    zStubble: '#93633f',
+    zHair: '#241915',
+    zHairL: '#3f2e25',
+    zKnit: '#8d8b87',
+    zKnitS: '#64625e',
+    zKnitL: '#c4c1ba',
+    zKnitD: '#4a4845',
+    zTee: '#2c2f36',
+    jeans: '#344a7a',
+    jeansS: '#253558',
     shoe: '#f1ede3',
     shoeS: '#bdb5a5',
-    aHair: '#a8471f',
-    aHairS: '#7a3113',
-    dress: '#7a4fd0',
-    dressS: '#5a3799',
-    dressL: '#9c7af0',
-    flats: '#2a2030',
-    lips: '#c4505a',
+    // Alex: blonde and pulled back, sunglasses up, dark chore jacket, white tee, gold hoops
+    aSkin: '#f7d3bb',
+    aSkinS: '#e0ab8e',
+    aHair: '#e6c579',
+    aHairS: '#c49d52',
+    aHairL: '#f6e2a8',
+    aJacket: '#363a48',
+    aJacketS: '#262833',
+    aJacketL: '#4d5264',
+    aCollar: '#3d2c25',
+    aJeans: '#4a6fa5',
+    aJeansS: '#36557f',
+    aBoot: '#8a5a3a',
+    aBootS: '#6a4228',
+    lips: '#d0606a',
     pink: '#ff5aa5',
     yellow: '#ffd23e',
     blue: '#3fa9ff',
@@ -147,19 +163,26 @@
 
   // ================================================================ ZACH
   function zHead(g, x, y, face) {
-    R(g, x, y + 1, 9, 9, C.skin);
-    R(g, x, y, 9, 3, C.zHair);
-    R(g, x, y, 3, 7, C.zHair);
-    R(g, x + 6, y + 2, 3, 1, C.zHair);
-    R(g, x + 3, y + 5, 2, 2, C.skinS);
-    R(g, x + 9, y + 5, 1, 2, C.skin);
-    R(g, x + 2, y + 9, 7, 1, C.skinS);
+    R(g, x, y + 1, 9, 9, C.zSkin);
+    // short at the sides, pushed up in front
+    R(g, x, y - 1, 8, 4, C.zHair);
+    R(g, x + 3, y - 2, 6, 2, C.zHair);
+    R(g, x + 7, y - 1, 2, 3, C.zHair);
+    R(g, x, y, 2, 5, C.zHair);
+    R(g, x + 4, y - 2, 3, 1, C.zHairL);
+    R(g, x + 3, y + 5, 2, 2, C.zSkinS);
+    R(g, x + 9, y + 5, 1, 2, C.zSkin);
+    // stubble
+    R(g, x + 2, y + 5, 1, 3, C.zStubble);
+    R(g, x + 3, y + 9, 6, 1, C.zStubble);
+    R(g, x + 5, y + 8, 4, 1, C.zStubble);
+    R(g, x + 6, y + 6, 3, 1, C.zStubble);
     switch (face) {
       case 'grin':
         R(g, x + 6, y + 4, 1, 2, C.ink);
         R(g, x + 5, y + 3, 3, 1, C.zHair);
-        R(g, x + 5, y + 7, 4, 1, C.ink);
-        R(g, x + 8, y + 6, 1, 1, C.ink);
+        R(g, x + 5, y + 7, 4, 2, C.ink);
+        R(g, x + 5, y + 7, 4, 1, C.white);
         break;
       case 'worry':
         R(g, x + 6, y + 4, 1, 2, C.ink);
@@ -184,24 +207,34 @@
       case 'down':
         R(g, x + 6, y + 5, 2, 1, C.ink);
         R(g, x + 5, y + 3, 3, 1, C.zHair);
-        R(g, x + 6, y + 8, 2, 1, C.skinD);
+        R(g, x + 6, y + 8, 2, 1, C.zSkinD);
         break;
       case 'blow':
         R(g, x + 6, y + 4, 1, 2, C.ink);
         R(g, x + 5, y + 3, 3, 1, C.zHair);
-        R(g, x + 3, y + 6, 3, 2, '#f6a98a');
+        R(g, x + 3, y + 6, 3, 2, '#d99a72');
         R(g, x + 8, y + 7, 2, 1, C.ink);
         break;
       default:
         R(g, x + 6, y + 4, 1, 2, C.ink);
         R(g, x + 5, y + 3, 3, 1, C.zHair);
-        R(g, x + 6, y + 7, 2, 1, C.skinD);
+        R(g, x + 6, y + 7, 2, 1, C.zSkinD);
     }
   }
   function zLeg(g, x, y, len, lift, col, shoe) {
     const pants = len - 2 - lift;
     R(g, x, y, 3, pants, col);
     R(g, x, y + pants, 4, 2, shoe);
+  }
+  // Heathered knit: a few light and dark flecks over the grey.
+  function knit(g, x, y, w, h) {
+    for (let yy = 0; yy < h; yy++) {
+      for (let xx = 0; xx < w; xx++) {
+        const n = (xx * 7 + yy * 13 + x * 3) % 11;
+        if (n === 0) R(g, x + xx, y + yy, 1, 1, C.zKnitL);
+        else if (n === 5) R(g, x + xx, y + yy, 1, 1, C.zKnitD);
+      }
+    }
   }
   function zachBody(g, o) {
     const b = o.bob | 0;
@@ -210,17 +243,22 @@
     const af = o.af || [0, 0];
     const ab = o.ab || [0, 0];
     zLeg(g, 10 + lb[0], 25 + b, 9 - b, lb[1], C.jeansS, C.shoeS);
-    R(g, 9 + ab[0], 17 + b + ab[1], 2, 6, C.zShirtS);
-    R(g, 9 + ab[0], 23 + b + ab[1], 2, 2, C.skinS);
-    R(g, 8, 16 + b, 8, 10, C.zShirt);
-    R(g, 8, 16 + b, 2, 10, C.zShirtS);
-    R(g, 14, 17 + b, 2, 7, C.zShirtL);
-    R(g, 11, 22 + b, 4, 2, C.zShirtS);
-    R(g, 8, 25 + b, 8, 1, C.jeansS);
+    R(g, 9 + ab[0], 17 + b + ab[1], 2, 6, C.zKnitS);
+    R(g, 9 + ab[0], 23 + b + ab[1], 2, 2, C.zSkinS);
+    R(g, 8, 16 + b, 8, 10, C.zKnit);
+    knit(g, 8, 16 + b, 8, 10);
+    R(g, 8, 16 + b, 2, 10, C.zKnitS);
+    // shawl collar, the dark tee under it, two buttons
+    R(g, 12, 16 + b, 3, 5, C.zKnitL);
+    R(g, 14, 16 + b, 2, 3, C.zTee);
+    R(g, 14, 21 + b, 1, 1, '#3a2a20');
+    R(g, 14, 23 + b, 1, 1, '#3a2a20');
+    R(g, 8, 25 + b, 8, 1, C.zKnitS);
     zLeg(g, 11 + lf[0], 25 + b, 9 - b, lf[1], C.jeans, C.shoe);
     zHead(g, 8, 6 + b, o.face || 'ok');
-    R(g, 12 + af[0], 17 + b + af[1], 2, 6, C.zShirt);
-    R(g, 12 + af[0], 23 + b + af[1], 2, 2, C.skin);
+    R(g, 12 + af[0], 17 + b + af[1], 2, 6, C.zKnit);
+    R(g, 12 + af[0], 18 + b + af[1], 1, 3, C.zKnitL);
+    R(g, 12 + af[0], 23 + b + af[1], 2, 2, C.zSkin);
     if (o.phone) {
       R(g, 15, 13 + b, 3, 6, '#20242c');
       R(g, 16, 14 + b, 1, 4, '#7fd7ff');
@@ -231,23 +269,25 @@
     R(g, 14, 32, 5, 2, C.shoe);
     R(g, 8, 28, 4, 4, C.jeansS);
     R(g, 13, 28, 5, 4, C.jeans);
-    R(g, 7, 24, 11, 6, C.zShirt);
-    R(g, 7, 24, 2, 6, C.zShirtS);
+    R(g, 7, 24, 11, 6, C.zKnit);
+    knit(g, 7, 24, 11, 6);
+    R(g, 7, 24, 2, 6, C.zKnitS);
     zHead(g, 9, 18, 'worry');
-    R(g, 8, 18, 10, 2, C.zShirt);
-    R(g, 17, 18, 2, 2, C.skin);
+    R(g, 8, 18, 10, 2, C.zKnit);
+    R(g, 17, 18, 2, 2, C.zSkin);
   }
   function zachSlide(g) {
     R(g, 21, 27, 2, 5, C.shoe);
     R(g, 12, 29, 10, 3, C.jeans);
     R(g, 10, 31, 9, 2, C.jeansS);
-    R(g, 6, 24, 9, 7, C.zShirt);
-    R(g, 6, 24, 2, 7, C.zShirtS);
-    R(g, 3, 30, 3, 3, C.skinS);
-    R(g, 4, 28, 3, 3, C.zShirtS);
+    R(g, 6, 24, 9, 7, C.zKnit);
+    knit(g, 6, 24, 9, 7);
+    R(g, 6, 24, 2, 7, C.zKnitS);
+    R(g, 3, 30, 3, 3, C.zSkinS);
+    R(g, 4, 28, 3, 3, C.zKnitS);
     zHead(g, 2, 17, 'shock');
-    R(g, 12, 22, 6, 2, C.zShirt);
-    R(g, 18, 21, 2, 2, C.skin);
+    R(g, 12, 22, 6, 2, C.zKnit);
+    R(g, 18, 21, 2, 2, C.zSkin);
   }
   const ZRUN = [
     { lf: [4, 0], lb: [-4, 1], af: [-3, -1], ab: [3, -1], face: 'worry' },
@@ -292,17 +332,27 @@
     return sprite(key, 24, 34, (g) => zachBody(g, o));
   };
   // Where a party hat sits, relative to the feet, facing right.
-  art.zachHatAt = { x: 1, y: -28 };
+  art.zachHatAt = { x: 1, y: -29 };
 
   // ================================================================ ALEX
   function aHead(g, x, y, face) {
-    R(g, x - 1, y + 1, 4, 10, C.aHair);
-    R(g, x, y + 1, 9, 9, C.skin);
+    // blonde, pulled back into a low bun
+    R(g, x - 3, y + 5, 3, 4, C.aHairS);
+    R(g, x - 1, y + 1, 3, 7, C.aHair);
+    R(g, x, y + 1, 9, 9, C.aSkin);
     R(g, x, y, 9, 3, C.aHair);
-    R(g, x + 5, y + 1, 4, 2, C.aHair);
-    R(g, x, y, 3, 8, C.aHair);
-    R(g, x + 9, y + 5, 1, 2, C.skin);
-    R(g, x + 2, y + 9, 7, 1, C.skinS);
+    R(g, x + 1, y - 1, 7, 1, C.aHair);
+    R(g, x, y, 3, 6, C.aHair);
+    R(g, x + 3, y + 1, 4, 1, C.aHairL);
+    R(g, x + 7, y + 2, 1, 2, C.aHair);
+    R(g, x + 9, y + 5, 1, 2, C.aSkin);
+    R(g, x + 2, y + 9, 7, 1, C.aSkinS);
+    R(g, x + 3, y + 5, 2, 2, C.aSkinS);
+    // gold hoop
+    R(g, x + 3, y + 7, 1, 2, C.brass);
+    // sunglasses pushed up on her head
+    R(g, x + 3, y - 1, 6, 2, C.ink);
+    R(g, x + 7, y - 1, 1, 1, '#7d8b99');
     switch (face) {
       case 'scream':
         R(g, x + 6, y + 4, 1, 1, C.ink);
@@ -322,8 +372,8 @@
       case 'smile':
         R(g, x + 6, y + 4, 1, 2, C.ink);
         R(g, x + 7, y + 4, 1, 1, C.ink);
-        R(g, x + 5, y + 7, 3, 1, C.lips);
-        R(g, x + 8, y + 6, 1, 1, C.lips);
+        R(g, x + 5, y + 7, 4, 2, C.lips);
+        R(g, x + 5, y + 7, 4, 1, C.white);
         break;
       default:
         R(g, x + 6, y + 4, 1, 2, C.ink);
@@ -337,43 +387,44 @@
     const lb = o.lb || [0, 0];
     const af = o.af || [0, 0];
     const ab = o.ab || [0, 0];
-    R(g, 10 + lb[0], 28, 2, 4 - lb[1], C.skinS);
-    R(g, 9 + lb[0], 32 - lb[1], 4, 2, C.flats);
-    R(g, 7, 9 + b, 4, 11, C.aHairS);
-    R(g, 9 + ab[0], 17 + b + ab[1], 2, 6, C.skinS);
-    R(g, 8, 16 + b, 8, 6, C.dress);
-    R(g, 7, 22 + b, 10, 3, C.dress);
-    R(g, 6, 25 + b, 12, 3, C.dress);
-    R(g, 8, 16 + b, 2, 6, C.dressS);
-    R(g, 7, 22 + b, 2, 3, C.dressS);
-    R(g, 6, 25 + b, 2, 3, C.dressS);
-    R(g, 13, 17 + b, 2, 4, C.dressL);
-    R(g, 8, 21 + b, 8, 1, C.dressS);
-    R(g, 12 + lf[0], 28, 2, 4 - lf[1], C.skin);
-    R(g, 12 + lf[0], 32 - lf[1], 4, 2, C.flats);
+    zLeg(g, 10 + lb[0], 25 + b, 9 - b, lb[1], C.aJeansS, C.aBootS);
+    R(g, 9 + ab[0], 17 + b + ab[1], 2, 6, C.aJacketS);
+    R(g, 9 + ab[0], 23 + b + ab[1], 2, 2, C.aSkinS);
+    // chore jacket, open over a white tee, corduroy collar
+    R(g, 8, 16 + b, 8, 10, C.aJacket);
+    R(g, 8, 16 + b, 2, 10, C.aJacketS);
+    R(g, 14, 16 + b, 2, 6, C.shirtW);
+    R(g, 13, 16 + b, 1, 10, C.aJacketL);
+    R(g, 14, 19 + b, 1, 1, C.brass);
+    R(g, 9, 16 + b, 5, 1, C.aCollar);
+    R(g, 10, 21 + b, 3, 1, C.aJacketS);
+    R(g, 8, 25 + b, 8, 1, C.aJacketS);
+    zLeg(g, 11 + lf[0], 25 + b, 9 - b, lf[1], C.aJeans, C.aBoot);
     aHead(g, 8, 7 + b, o.face || 'ok');
-    R(g, 12 + af[0], 17 + b + af[1], 2, 6, C.skin);
+    R(g, 12 + af[0], 17 + b + af[1], 2, 6, C.aJacket);
+    R(g, 12 + af[0], 23 + b + af[1], 2, 2, C.aSkin);
     if (o.gift) {
       R(g, 13, 17 + b, 9, 8, '#d8433a');
       R(g, 16, 17 + b, 2, 8, C.brass);
     }
   }
   function alexKneel(g) {
-    R(g, 2, 31, 10, 3, C.skinS);
-    R(g, 0, 32, 3, 2, C.flats);
-    R(g, 6, 26, 12, 6, C.dress);
-    R(g, 6, 26, 2, 6, C.dressS);
-    R(g, 8, 18, 8, 8, C.dress);
-    R(g, 8, 18, 2, 8, C.dressS);
-    R(g, 7, 10, 4, 12, C.aHairS);
+    R(g, 2, 30, 10, 4, C.aJeansS);
+    R(g, 0, 31, 3, 3, C.aBoot);
+    R(g, 7, 26, 9, 5, C.aJeans);
+    R(g, 8, 18, 8, 9, C.aJacket);
+    R(g, 8, 18, 2, 9, C.aJacketS);
+    R(g, 14, 18, 2, 4, C.shirtW);
+    R(g, 9, 18, 5, 1, C.aCollar);
     aHead(g, 8, 9, 'scream');
-    R(g, 13, 17, 8, 2, C.skinS);
-    R(g, 14, 15, 8, 2, C.skin);
-    R(g, 21, 13, 2, 3, C.skin);
+    R(g, 13, 17, 8, 2, C.aJacketS);
+    R(g, 14, 15, 8, 2, C.aJacket);
+    R(g, 21, 13, 2, 3, C.aSkin);
+    R(g, 20, 17, 2, 2, C.aSkinS);
   }
   function alexPeek(g) {
-    aHead(g, 3, 4, 'worry');
-    R(g, 11, 11, 3, 3, C.skin);
+    aHead(g, 4, 4, 'worry');
+    R(g, 12, 11, 3, 3, C.aSkin);
   }
   const AWALK = [
     { lf: [2, 0], lb: [-2, 0], af: [-1, 0], ab: [1, 0] },
@@ -394,7 +445,7 @@
     if (pose === 'walk') return sprite('a-walk' + (frame & 3), 24, 34, (g) => alexBody(g, AWALK[frame & 3]));
     return sprite('a-' + pose, 24, 34, (g) => alexBody(g, APOSE[pose] || APOSE.idle));
   };
-  art.alexHatAt = { x: 1, y: -27 };
+  art.alexHatAt = { x: 1, y: -28 };
 
   // Party hats: 9x11, anchored at the brim.
   art.hat = function (who) {
@@ -1203,10 +1254,10 @@
       case 'family':
         person(fx + 2, fy + fh - 8, C.cardi, C.dHair);
         person(fx + 6, fy + fh - 8, '#c77c56', '#8a5a38');
-        person(fx + 10, fy + fh - 8, C.dress, C.aHair);
+        person(fx + 10, fy + fh - 8, C.aJacket, C.aHair);
         break;
       case 'brandon':
-        person(fx + 3, fy + fh - 8, C.dress, C.aHair);
+        person(fx + 3, fy + fh - 8, C.aJacket, C.aHair);
         person(fx + fw - 7, fy + fh - 8, '#3a5a8a', '#3a2a1a');
         R(g, fx + fw - 9, fy + fh - 10, 6, 6, '#ffe45c');
         R(g, fx + fw - 8, fy + fh - 8, 4, 1, '#c9a400');
@@ -1215,7 +1266,7 @@
         R(g, fx + 1, fy + fh - 5, fw - 2, 2, '#7a4a2a');
         R(g, fx + fw / 2 - 3, fy + fh - 9, 6, 4, '#e5857f');
         person(fx + 1, fy + fh - 10, C.cardi, C.dHair);
-        person(fx + fw - 4, fy + fh - 10, C.zShirt, C.zHair);
+        person(fx + fw - 4, fy + fh - 10, C.zKnit, C.zHair);
         break;
       case 'sailboat':
         R(g, fx, fy + fh - 4, fw, 4, '#3d6fc4');

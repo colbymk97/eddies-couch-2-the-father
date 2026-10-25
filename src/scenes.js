@@ -251,7 +251,7 @@
       const bob = a.to != null && a.frame & 1 ? 1 : 0;
       art.put(g, art.hat(kind), a.x + at.x * a.face, FY + at.y + bob, { rot: a.tilt * a.face });
     } else if (a.hat && a.pose === 'kneel') {
-      art.put(g, art.hat(kind), a.x + 1 * a.face, FY - 25, { rot: 0.2 * a.face });
+      art.put(g, art.hat(kind), a.x + 1 * a.face, FY - 26, { rot: 0.2 * a.face });
     }
   }
 
