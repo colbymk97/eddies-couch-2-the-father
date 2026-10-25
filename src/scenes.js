@@ -891,7 +891,7 @@
     yield* say(cs, 'zach', 'I’d say more of a “miscommunicator” —');
     yield* say(cs, 'dad', 'A man who cannot produce a couch game cannot produce a _future._ You are not good enough for my daughter.');
     S.alex.pose = 'worry';
-    yield* say(cs, 'alex', 'Daddy, please! It’s his birthday!');
+    yield* say(cs, 'alex', 'Daddy, please!');
 
     // He ignores her. Off come the reading glasses, folded very neatly.
     S.dad.pose = 'glasses';
@@ -1053,9 +1053,10 @@
     S.mom.blown = 0;
     S.mom.pose = 'holdStern';
     yield 0.3;
+    // The game was the excuse. It's Zach he wants.
     sfx.roar(1.4);
     EC.fx.shake(3, 1.2);
-    yield* say(cs, 'beast', 'WHERE. IS. MY. GAME.', { loud: true });
+    yield* say(cs, 'beast', 'ZAAAACHARYYYY.', { loud: true });
 
     // Smash cut to black.
     sfx.smash();

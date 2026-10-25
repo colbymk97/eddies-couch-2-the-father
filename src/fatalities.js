@@ -33,6 +33,9 @@
       this.red = 0;
       this.glass = null;
       this.mom = null;
+      this.alex = null;
+      this.tears = new EC.Particles();
+      this.messHint = null;
       this.plastic = 0;
       this.wipe = 0;
       this.momScore = 0;
@@ -174,6 +177,7 @@
     }
     // Where the worst of it is.
     messX() {
+      if (this.messHint != null) return this.messHint;
       const low = this.pieces.filter((p) => !p.hold && p.y > FLOOR - 60);
       if (!low.length) return this.beast.x + 50;
       return low.reduce((a, p) => a + p.x, 0) / low.length;
@@ -268,6 +272,41 @@
           m.dist += mv;
         }
       }
+      const a = this.alex;
+      if (a) {
+        if (a.to != null) {
+          const dx = a.to - a.x;
+          if (Math.abs(dx) < 1) {
+            a.x = a.to;
+            a.to = null;
+          } else {
+            a.face = dx > 0 ? 1 : -1;
+            const mv = Math.min(Math.abs(dx), a.speed * d);
+            a.x += Math.sign(dx) * mv;
+            a.dist += mv;
+          }
+        }
+        if (a.crying) {
+          a.ct += d;
+          a.tearT -= d;
+          if (a.tearT <= 0) {
+            // two little fountains
+            a.tearT = 0.06;
+            const ey = FLOOR - 21 + (Math.floor(a.ct / 0.22) & 1);
+            for (const sd of [-1, 1]) {
+              this.tears.add({ x: a.x + 2 * a.face, y: ey, vx: sd * EC.rand(25, 70), vy: EC.rand(-120, -50), g: 420, life: 0.8, size: EC.pick([1, 1, 2]), color: EC.pick(['#7fd7ff', '#bfeaff', '#ffffff']), floor: FLOOR + 2, bounce: 0, onBounce: (q) => (q.t = q.life) });
+            }
+          }
+        }
+        if (a.to == null && !this.done) {
+          a.sobT -= dt;
+          if (a.sobT <= 0) {
+            sfx.sob();
+            a.sobT = 1.6;
+          }
+        }
+      }
+      this.tears.update(d);
       this.blood.update(d);
       this.bits.update(d);
       if (this.stamp) this.stamp.t += dt;
@@ -326,7 +365,7 @@
       if (this.plastic > 0) {
         g.globalAlpha = this.plastic;
         for (const p of this.pieces) {
-          if (p.hold || p.y < FLOOR - 50 || p.spr === art.gib('framed')) continue;
+          if (p.hold || p.noPlastic || p.y < FLOOR - 50 || p.spr === art.gib('framed')) continue;
           const hw = Math.ceil(p.spr.w / 2) + 3;
           const top = Math.round(Math.min(p.y - p.spr.h / 2, FLOOR - 8)) - 3;
           R(g, Math.round(p.x - hw), top, hw * 2, FLOOR - top + 1, 'rgba(225,238,255,0.42)');
@@ -336,6 +375,11 @@
         }
         g.globalAlpha = 1;
       }
+      const a = this.alex;
+      if (a) {
+        const spr = a.to != null ? art.alex('run', Math.floor(a.dist / 7)) : a.crying ? art.alex('cry', Math.floor(a.ct / 0.22)) : art.alex(a.pose, 0);
+        art.put(g, spr, a.x, FLOOR, { flip: a.face < 0 });
+      }
       const m = this.mom;
       if (m) {
         const pose = m.to != null ? 'walk' : m.pose;
@@ -343,6 +387,7 @@
       }
       this.blood.draw(g, 0);
       this.bits.draw(g, 0);
+      this.tears.draw(g, 0);
     }
 
     // Things on the glass of the TV: a face, a red tide, Gary, the stamp.
@@ -474,6 +519,28 @@
     }
   }
 
+  // ================================================================ Alex
+  // Every time: she runs in, drops to her knees beside what's left, and cries. She doesn't stop.
+  function* grief(F, cs, x) {
+    const [l, r] = F.viewBounds();
+    let spot = x - 20;
+    let face = 1;
+    if (spot < l + 14) {
+      spot = x + 20;
+      face = -1;
+    }
+    spot = EC.clamp(spot, l + 14, r - 14);
+    F.alex = { x: face > 0 ? l - 16 : r + 16, face, to: spot, speed: 210, dist: 0, pose: 'run', crying: false, ct: 0, tearT: 0, sobT: 0 };
+    const a = F.alex;
+    yield () => a.to == null;
+    a.face = face;
+    a.pose = 'kneel';
+    sfx.land();
+    yield 0.45;
+    a.crying = true;
+    yield 0.4;
+  }
+
   // ================================================================ Mom cleans up
   // She has done this before. She will do it again.
   function* aftermath(F, cs, how) {
@@ -499,6 +566,51 @@
     const [l, r] = F.viewBounds();
     F.mom = { x: r + 16, face: -1, pose: 'sigh', dist: 0, to: null, speed: 150 };
     const m = F.mom;
+    if (how === 'leftovers') {
+      // the sneaker goes in a Tupperware, for later
+      const shoe = F.pieces.find((p) => p.spr === art.gib('shoe'));
+      if (shoe) {
+        F.momWalk(shoe.x + 13);
+        yield () => m.to == null;
+        m.face = -1;
+        m.pose = 'tupper';
+        yield 0.3;
+        cs.tween(shoe, { x: m.x - 8, y: FLOOR - 13 }, 0.25);
+        yield 0.3;
+        F.remove(shoe);
+        m.pose = 'tupperFull';
+        sfx.click();
+        yield 0.12;
+        sfx.click();
+        yield 0.6;
+        m.pose = 'sigh';
+      }
+    }
+    if (how === 'tape') {
+      // she puts him back together with packing tape
+      const front = F.pieces.find((p) => p.half === 'front');
+      const back = F.pieces.find((p) => p.half === 'back');
+      if (front && back) {
+        const X = back.x;
+        F.momWalk(X + 24);
+        yield () => m.to == null;
+        m.face = -1;
+        m.pose = 'point';
+        // face-up half on top, cut sides together
+        cs.tween(back, { y: FLOOR - 7, rot: -Math.PI / 2 }, 0.45, EC.ease.inOut);
+        cs.tween(front, { x: X, y: FLOOR - 20, rot: -Math.PI / 2 }, 0.45, EC.ease.inOut);
+        sfx.slide();
+        yield 0.55;
+        for (const dx of [-10, 0, 10]) {
+          F.add(TAPE(), X + dx, FLOOR - 13, { noPlastic: true });
+          sfx.tape();
+          yield 0.32;
+        }
+        sfx.pat();
+        m.pose = 'sigh';
+        yield 0.35;
+      }
+    }
     if (how === 'frame') {
       const frame = F.pieces.find((p) => p.spr === art.gib('framed'));
       if (frame) {
@@ -555,14 +667,30 @@
     }
     // and plastic over whatever's left
     m.pose = 'sigh';
-    sfx.crinkle();
-    cs.tween(F, { plastic: 1 }, 0.3);
-    yield 0.5;
-    sfx.pat();
+    if (F.pieces.some((p) => !p.hold && !p.noPlastic && p.y > FLOOR - 50)) {
+      sfx.crinkle();
+      cs.tween(F, { plastic: 1 }, 0.3);
+      yield 0.5;
+      sfx.pat();
+    }
     yield 0.6;
   }
 
-  // ================================================================ the eight
+  const BULGE = () =>
+    art.sprite('bulge', 9, 8, (g) => {
+      R(g, 1, 0, 7, 8, C.bSkin);
+      R(g, 0, 1, 9, 6, C.bSkin);
+      R(g, 2, 1, 3, 2, C.bSkinL);
+      R(g, 1, 6, 7, 1, C.bSkinS);
+    }, true);
+  const TAPE = () =>
+    art.sprite('tape', 3, 15, (g) => {
+      R(g, 0, 0, 3, 15, '#d9bf8c');
+      R(g, 0, 0, 1, 15, '#f0dcb0');
+      R(g, 0, 7, 3, 1, '#c4a874');
+    }, true);
+
+  // ================================================================ the ten
   // 1. Head-first into the floorboards. The legs keep going for a while.
   function* lawnDart(F, cs) {
     const bx = F.beast.x;
@@ -607,6 +735,7 @@
     yield 0.18;
     sfx.pat();
     F.stampIt('LAWN DARTED.');
+    yield* grief(F, cs, z.x);
     yield* aftermath(F, cs, 'mop');
   }
 
@@ -658,10 +787,94 @@
     yield 0.7;
     sfx.pat();
     F.stampIt('RECLINED.');
+    yield* grief(F, cs, cube.x);
     yield* aftermath(F, cs, 'mop');
   }
 
-  // 3. Through the ceiling. Something comes back down.
+  // 3. Tossed up like a grape and caught. Chewed. Swallowed. A sneaker comes back up.
+  function* eaten(F, cs) {
+    const bx = F.beast.x;
+    const mx = bx + 28;
+    const my = FLOOR - 66;
+    F.camTo(1.6, bx + 30, FLOOR - 80, 0.4);
+    F.pose({ arm: 'fwd', head: 'roar' });
+    const z = F.zach('hurt', { flip: true });
+    F.holdAt(z, 'fwd', 4, 22);
+    sfx.roar(0.6);
+    yield 0.5;
+    // up he goes
+    F.release(z);
+    F.pose({ arm: 'up', armB: 'swing1', head: 'n' });
+    sfx.whoosh();
+    cs.tween(z, { x: mx, y: my - 84, rot: Math.PI * 3 }, 0.55, EC.ease.out);
+    yield 0.6;
+    // mouth open; head first
+    F.pose({ arm: 'swing0', armB: 'swing1', head: 'roar' });
+    z.clipY = my + 1;
+    cs.tween(z, { y: my - 22 }, 0.35, EC.ease.in);
+    yield 0.36;
+    sfx.crunch();
+    sfx.splat();
+    F.shake(5, 0.25);
+    F.bleed(mx, my + 2, 14, { a0: -0.4, a1: Math.PI + 0.4, s0: 40, s1: 160 });
+    F.fountain({ x: mx + 3, y: my + 7, dur: 3.2, rate: 12, a: Math.PI / 2, spread: 0.3, s0: 10, s1: 40 });
+    // chewing, legs still going
+    for (let i = 0; i < 8; i++) {
+      F.pose({ arm: 'swing0', armB: 'swing1', head: i % 2 ? 'roar' : 'n' });
+      z.flip = !z.flip;
+      z.y += 1.5;
+      if (i % 2 === 0) {
+        sfx.crunch();
+        F.bleed(mx - 2, my + 4, 5, { a0: 0.3, a1: 2.8, s0: 20, s1: 90 });
+      }
+      if (i === 3) sfx.blip('zachm');
+      yield 0.17;
+    }
+    // slurped in like spaghetti
+    F.pose({ arm: 'swing0', armB: 'swing1', head: 'roar' });
+    sfx.slurp();
+    cs.tween(z, { y: my + 2 }, 0.45, EC.ease.in);
+    yield 0.5;
+    F.remove(z);
+    F.pool(mx + 3, 16);
+    // gulp: a lump goes down, and something inside is still yelling
+    F.pose({ arm: 'swing0', armB: 'swing1', head: 'n' });
+    sfx.gulp();
+    const lump = F.add(BULGE(), bx + 15, FLOOR - 58);
+    cs.tween(lump, { x: bx + 2, y: FLOOR - 38 }, 0.6, EC.ease.in);
+    yield 0.7;
+    for (let i = 0; i < 4; i++) {
+      lump.x += i % 2 ? 3 : -3;
+      lump.sx = 1.25;
+      lump.sy = 1.15;
+      sfx.blip('zachm');
+      yield 0.18;
+      lump.sx = lump.sy = 1;
+      yield 0.22;
+    }
+    F.remove(lump);
+    yield 0.25;
+    // and the burp
+    F.pose({ arm: 'down', armB: 'swing1', head: 'roar' });
+    sfx.burp();
+    F.shake(2, 0.6);
+    F.bitsBurst(mx + 4, my + 2, 14, ['#c9d68a', '#e8eebc', '#a8b860'], { g: -30, s0: 20, s1: 80, a0: -0.9, a1: 0.7, life: 1.1 });
+    const shoe = F.gib('shoe', mx + 4, my + 2, { phys: true, vx: 110, vy: -160, vr: 12, bounce: 0.4 });
+    F.bleed(mx + 4, my + 2, 6, { a0: -0.6, a1: 0.4, s0: 80, s1: 180 });
+    yield 1.0;
+    // he pats his belly
+    F.pose({ arm: 'down', armB: 'swing1', head: 'n' });
+    sfx.pat();
+    yield 0.2;
+    sfx.pat();
+    yield 0.4;
+    F.messHint = mx + 3;
+    F.stampIt('LEFTOVERS.');
+    yield* grief(F, cs, shoe.x);
+    yield* aftermath(F, cs, 'leftovers');
+  }
+
+  // 4. Through the ceiling. Something comes back down.
   function* punted(F, cs) {
     const bx = F.beast.x;
     F.camTo(1.0, bx + 40, EC.H / 2, 0.35);
@@ -708,10 +921,11 @@
     F.beast.jitter = 0;
     yield 0.8;
     F.stampIt('PUNTED.');
+    yield* grief(F, cs, hx);
     yield* aftermath(F, cs, 'mop');
   }
 
-  // 4. Stomped flat, peeled up like a sticker, framed, squared up, patted once.
+  // 5. Stomped flat, peeled up like a sticker, framed, squared up, patted once.
   function* framed(F, cs) {
     const bx = F.beast.x;
     F.camTo(1.6, bx + 40, FLOOR - 64, 0.4);
@@ -772,50 +986,100 @@
     yield 0.15;
     frame.y -= 1;
     F.stampIt('FRAMED.');
+    yield* grief(F, cs, frame.x);
     yield* aftermath(F, cs, 'frame');
   }
 
-  // 5. Pulled apart like a wishbone, in slow motion. He makes a wish.
-  function* wishbone(F, cs) {
+  // 6. Held up like a phone book and torn down the middle. Over the shoulders; a flex.
+  function* split(F, cs) {
     const bx = F.beast.x;
-    F.camTo(1.7, bx + 26, FLOOR - 76, 0.4);
-    F.pose({ arm: 'wide', armB: 'wide', head: 'roar' });
-    const z = F.zach('hurt');
-    z.rot = Math.PI;
-    F.holdAt(z, 'wide', -6, 2);
-    yield 0.5;
-    sfx.stretch();
-    cs.tween(z, { sy: 1.4 }, 0.9, EC.ease.in);
-    F.shake(1.5, 0.9);
-    yield 0.9;
-    // SNAP
-    F.ts = 0.35;
-    sfx.crack();
+    F.camTo(1.6, bx + 26, FLOOR - 66, 0.4);
+    F.pose({ arm: 'fwd', head: 'roar' });
+    const z = F.zach('hurt', { flip: true });
+    F.holdAt(z, 'fwd', 4, 22);
+    yield 0.45;
+    // turned sideways, both hands on him
+    F.pose({ arm: 'fwd', armB: 'hold', head: 'roar' });
+    F.remove(z);
+    const cx = bx + 31;
+    const cy = FLOOR - 52;
+    const whole = F.zach('idle', { rot: -Math.PI / 2 });
+    whole.x = cx + 17;
+    whole.y = cy;
+    sfx.roar(0.7);
+    yield 0.4;
+    // he pulls
+    for (let i = 0; i < 3; i++) {
+      whole.sx = 1.3;
+      F.beast.jitter = i % 2 ? -1 : 1;
+      sfx.stretch();
+      F.shake(2, 0.2);
+      yield 0.26;
+      whole.sx = 1;
+      F.beast.jitter = 0;
+      yield 0.16;
+    }
+    // RRRIP
+    F.remove(whole);
     sfx.rip();
+    sfx.crack();
     sfx.splat();
     EC.fx.flash('#ff2b2b', 0.25);
-    const cx = z.x;
-    const cy = z.y + 20;
-    F.remove(z);
-    F.gib('top', cx - 6, cy + 10, { phys: true, vx: -170, vy: -260, vr: -7, rot: Math.PI, bounce: 0.3, onLand: (p, hard) => hard && F.pool(p.x, 22) });
-    F.gib('legs', cx + 6, cy - 6, { phys: true, vx: 200, vy: -320, vr: 9, rot: Math.PI, bounce: 0.3, onLand: (p, hard) => hard && F.pool(p.x, 16) });
-    F.gib('bone', cx, cy, { phys: true, vx: 40, vy: -420, vr: 20, bounce: 0.5 });
-    F.fountain({ x: cx, y: cy, dur: 1.4, rate: 110, a: -Math.PI / 2, spread: 0.9, s0: 160, s1: 360 });
-    F.splatWall(cx, cy, 26, 50);
-    yield 0.55;
-    F.ts = 1;
-    F.pose({ arm: 'swing0', armB: 'swing1', head: 'n' });
-    yield 1.2;
-    // he makes a wish
-    F.pose({ arm: 'hold', armB: 'swing1', head: 'n' });
-    F.sparkle(bx + 30, FLOOR - 52);
-    sfx.wish();
+    F.shake(7, 0.4);
+    const front = F.gib('halfF', cx, cy - 6, { rot: -Math.PI / 2, half: 'front' });
+    const back = F.gib('halfB', cx, cy + 6, { rot: -Math.PI / 2, half: 'back' });
+    F.pose({ arm: 'up', armB: 'down', head: 'roar' });
+    const up = F.hand('up');
+    const dn = F.hand('down');
+    cs.tween(front, { x: up.x + 2, y: up.y + 4, rot: -Math.PI / 2 - 0.5 }, 0.18, EC.ease.out);
+    cs.tween(back, { x: dn.x + 4, y: dn.y - 4, rot: -Math.PI / 2 + 0.6 }, 0.18, EC.ease.out);
+    F.fountain({ x: cx, y: cy, dur: 1.3, rate: 120, a: -Math.PI / 2, spread: 1.1, s0: 140, s1: 340 });
+    F.gib('bone', cx, cy, { phys: true, vx: 70, vy: -380, vr: 18, bounce: 0.5 });
+    F.gib('bone', cx, cy, { phys: true, vx: -50, vy: -300, vr: -16, bounce: 0.5 });
+    F.splatWall(cx, cy - 20, 24, 50);
     yield 1.0;
-    F.stampIt('WISHBONED.');
-    yield* aftermath(F, cs, 'mop');
+    // over the shoulders
+    F.camTo(1.25, bx - 18, FLOOR - 74, 0.5);
+    F.pose({ arm: 'up', armB: 'up', head: 'roar' });
+    sfx.whoosh();
+    const arc = (p, x1, h, spin, dur) => {
+      const x0 = p.x;
+      const y0 = p.y;
+      const r0 = p.rot;
+      const t0 = cs.t;
+      return () => {
+        const k = Math.min(1, (cs.t - t0) / dur);
+        p.x = EC.lerp(x0, x1, k);
+        p.y = EC.lerp(y0, FLOOR - 7, k) - Math.sin(k * Math.PI) * h;
+        p.rot = EC.lerp(r0, -Math.PI / 2 + spin, k);
+        return k >= 1;
+      };
+    };
+    const fa = arc(front, bx - 64, 70, -Math.PI * 2, 0.75);
+    const fb = arc(back, bx - 96, 50, Math.PI * 2, 0.65);
+    yield () => {
+      const a = fa();
+      const b = fb();
+      return a && b;
+    };
+    sfx.land();
+    sfx.splat();
+    F.pool(bx - 64, 22);
+    F.pool(bx - 96, 18);
+    F.bleed(bx - 80, FLOOR - 8, 16, { s0: 60, s1: 180 });
+    yield 0.3;
+    // the flex
+    F.pose({ arm: 'up', armB: 'up', head: 'roar' });
+    sfx.roar(0.9);
+    F.shake(3, 0.5);
+    yield 1.1;
+    F.pose({ arm: 'swing0', armB: 'swing1', head: 'n' });
+    F.stampIt('SPLIT DECISION.');
+    yield* grief(F, cs, bx - 112);
+    yield* aftermath(F, cs, 'tape');
   }
 
-  // 6. Squeezed until the head pops like a cork. The body takes a lap. The head blinks.
+  // 7. Squeezed until the head pops like a cork. The body takes a lap. The head blinks.
   function* popped(F, cs) {
     const bx = F.beast.x;
     F.camTo(1.6, bx + 40, FLOOR - 76, 0.4);
@@ -888,10 +1152,52 @@
     yield 0.15;
     F.swap(head, 'head');
     F.stampIt('POPPED.');
+    yield* grief(F, cs, body.x);
     yield* aftermath(F, cs, 'head');
   }
 
-  // 7. Helicoptered by the ankle until things come off. One of them hits the camera. He tidies up.
+  // 8. Pulled apart like a wishbone, in slow motion. He makes a wish.
+  function* wishbone(F, cs) {
+    const bx = F.beast.x;
+    F.camTo(1.7, bx + 26, FLOOR - 76, 0.4);
+    F.pose({ arm: 'wide', armB: 'wide', head: 'roar' });
+    const z = F.zach('hurt');
+    z.rot = Math.PI;
+    F.holdAt(z, 'wide', -6, 2);
+    yield 0.5;
+    sfx.stretch();
+    cs.tween(z, { sy: 1.4 }, 0.9, EC.ease.in);
+    F.shake(1.5, 0.9);
+    yield 0.9;
+    // SNAP
+    F.ts = 0.35;
+    sfx.crack();
+    sfx.rip();
+    sfx.splat();
+    EC.fx.flash('#ff2b2b', 0.25);
+    const cx = z.x;
+    const cy = z.y + 20;
+    F.remove(z);
+    F.gib('top', cx - 6, cy + 10, { phys: true, vx: -170, vy: -260, vr: -7, rot: Math.PI, bounce: 0.3, onLand: (p, hard) => hard && F.pool(p.x, 22) });
+    F.gib('legs', cx + 6, cy - 6, { phys: true, vx: 200, vy: -320, vr: 9, rot: Math.PI, bounce: 0.3, onLand: (p, hard) => hard && F.pool(p.x, 16) });
+    F.gib('bone', cx, cy, { phys: true, vx: 40, vy: -420, vr: 20, bounce: 0.5 });
+    F.fountain({ x: cx, y: cy, dur: 1.4, rate: 110, a: -Math.PI / 2, spread: 0.9, s0: 160, s1: 360 });
+    F.splatWall(cx, cy, 26, 50);
+    yield 0.55;
+    F.ts = 1;
+    F.pose({ arm: 'swing0', armB: 'swing1', head: 'n' });
+    yield 1.2;
+    // he makes a wish
+    F.pose({ arm: 'hold', armB: 'swing1', head: 'n' });
+    F.sparkle(bx + 30, FLOOR - 52);
+    sfx.wish();
+    yield 1.0;
+    F.stampIt('WISHBONED.');
+    yield* grief(F, cs, F.messX());
+    yield* aftermath(F, cs, 'mop');
+  }
+
+  // 9. Helicoptered by the ankle until things come off. One of them hits the camera. He tidies up.
   function* tidied(F, cs) {
     const bx = F.beast.x;
     F.camTo(1.25, bx + 30, FLOOR - 84, 0.4);
@@ -957,10 +1263,11 @@
     yield 0.35;
     sfx.pat();
     F.stampIt('TIDIED UP.');
+    yield* grief(F, cs, sx);
     yield* aftermath(F, cs, 'wipe');
   }
 
-  // 8. Punched to pieces, juggled, slam-dunked. Gary from church scores it.
+  // 10. Punched to pieces, juggled, slam-dunked. Gary from church scores it.
   function* flawless(F, cs) {
     const bx = F.beast.x;
     F.camTo(1.0, bx + 30, EC.H / 2, 0.3);
@@ -1027,16 +1334,19 @@
     sfx.cheer();
     yield 1.9;
     F.stampIt('FLAWLESS.');
+    yield* grief(F, cs, bx + 30);
     yield* aftermath(F, cs, 'score');
   }
 
   const LIST = [
     { name: 'LAWN DARTED.', script: lawnDart },
     { name: 'RECLINED.', script: reclined },
+    { name: 'LEFTOVERS.', script: eaten },
     { name: 'PUNTED.', script: punted },
     { name: 'FRAMED.', script: framed },
-    { name: 'WISHBONED.', script: wishbone },
+    { name: 'SPLIT DECISION.', script: split },
     { name: 'POPPED.', script: popped },
+    { name: 'WISHBONED.', script: wishbone },
     { name: 'TIDIED UP.', script: tidied },
     { name: 'FLAWLESS.', script: flawless },
   ];
@@ -1048,15 +1358,16 @@
     create(level) {
       const idx = session < LIST.length ? session : (Math.random() * LIST.length) | 0;
       session++;
-      const seen = EC.store.get('deathsSeen', []);
-      if (seen.indexOf(idx) < 0) {
-        seen.push(idx);
+      // remembered by name, so reordering the list doesn't muddle the count
+      const seen = EC.store.get('deathsSeen', []).filter((n) => typeof n === 'string');
+      if (seen.indexOf(LIST[idx].name) < 0) {
+        seen.push(LIST[idx].name);
         EC.store.set('deathsSeen', seen);
       }
       return new Fatal(level, idx);
     },
     seen() {
-      return EC.store.get('deathsSeen', []).length;
+      return EC.store.get('deathsSeen', []).filter((n) => LIST.some((d) => d.name === n)).length;
     },
   };
 })();

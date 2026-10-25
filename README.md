@@ -1,6 +1,6 @@
 # Eddie's Couch 2: Meet the Father
 
-Zach promised his girlfriend's dad he'd show him *Eddie's Couch*. The game no longer exists. The dad does not accept this.
+Zach promised his girlfriend's dad he'd show him *Eddie's Couch*. The game no longer exists. The dad has gotten over the game. He has not gotten over Zach.
 
 A browser game in three parts:
 
@@ -34,16 +34,20 @@ Getting caught sends you back to the start of the room you're in. Disks you've f
 
 ## Getting caught
 
-He doesn't just catch you. Each catch is worse than the last, in order, and after the eighth he picks at random. Press Enter or tap to skip to the end of one. The game-over card counts how many you've seen.
+He doesn't just catch you. Each catch is worse than the last, in order, and after the tenth he picks at random. Press Enter or tap to skip to the end of one. The game-over card counts how many you've seen.
+
+Every time, Alex runs in, drops to her knees beside what's left of Zach, and cries. She's still crying when the card comes up.
 
 1. **Lawn Darted.** Head-first into the floorboards. The legs keep kicking. A sneaker comes off.
 2. **Reclined.** Folded into a neat cube with a lever. He pulls it; the footrest comes out.
-3. **Punted.** Through the ceiling. Something drips. A sneaker comes back down on his head.
-4. **Framed.** Stomped flat, peeled off the floor, hung on the wall, squared up, patted once.
-5. **Wishboned.** Pulled apart in slow motion. He makes a wish.
-6. **Popped.** Squeezed until the head pops like a cork and ricochets around the room. The body takes a lap. The head blinks.
-7. **Tidied Up.** Helicoptered by the ankle until pieces come off; one hits the TV screen. He stacks the rest neatly.
-8. **Flawless.** Punched to pieces, juggled, slam-dunked into a crater. Gary from church rises from the floor and scores it a 10, 10, 10.
+3. **Leftovers.** Tossed up like a grape and caught head-first. Chewed with the legs still kicking, slurped down, a lump in his belly still yelling. He burps up a sneaker.
+4. **Punted.** Through the ceiling. Something drips. A sneaker comes back down on his head.
+5. **Framed.** Stomped flat, peeled off the floor, hung on the wall, squared up, patted once.
+6. **Split Decision.** Held up like a phone book and torn down the middle, one half in each hand. Over the shoulders, then a flex.
+7. **Popped.** Squeezed until the head pops like a cork and ricochets around the room. The body takes a lap. The head blinks.
+8. **Wishboned.** Pulled apart at the waist in slow motion. He makes a wish.
+9. **Tidied Up.** Helicoptered by the ankle until pieces come off; one hits the TV screen. He stacks the rest neatly.
+10. **Flawless.** Punched to pieces, juggled, slam-dunked into a crater. Gary from church rises from the floor and scores it a 10, 10, 10.
 
 ## Mom
 
@@ -51,7 +55,7 @@ Alex's mom is completely unbothered by all of this.
 
 - **In the intro** she walks in with a casserole mid-argument, asks if you two are staying for dinner, and tells the Beast to mind the good cardigan. When he roars she stands in the gale and keeps hold of the casserole.
 - **In the kitchen** she's stirring a pot. She waves when Zach runs past. If the Beast comes through while she's there, she points at him and he stops dead for a second, head down.
-- **After every death** she comes in with a mop and a roll of plastic sheeting and tidies up. She hangs the frame back up straight, carries the head back to its body, wipes the TV screen, and holds up her own scorecard for Flawless: a 4.
+- **After every death** she comes in with a mop and a roll of plastic sheeting and tidies up. She hangs the frame back up straight, carries the head back to its body, tapes the two halves back together with packing tape, puts the burped-up sneaker in a Tupperware, wipes the TV screen, and holds up her own scorecard for Flawless: a 4.
 - **At the end** the porch light comes on and she hands Zach a casserole for the road, or the gift if he left it behind. Then: "And Zachary? Find the game."
 - **Brandon** is buried in the front yard, out by the mailbox, wearing his party hat. She keeps a casserole on him. When Zach backs into the headstone, she opens the door just long enough to say "Mind Brandon, sweetie."
 

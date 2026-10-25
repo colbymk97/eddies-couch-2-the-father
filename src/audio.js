@@ -344,6 +344,29 @@
       noise({ f: 6000, ftype: 'highpass', dur: 0.02, vol: 0.3 });
       noise({ f: 6000, ftype: 'highpass', dur: 0.02, vol: 0.3, delay: 0.12 });
     },
+    tape() {
+      noise({ f: 2400, f2: 1600, ftype: 'bandpass', q: 1.5, dur: 0.3, vol: 0.22 });
+    },
+
+    // Alex, on her knees: a wail, then the hiccups
+    sob() {
+      tone({ type: 'triangle', f: 900, f2: 520, dur: 0.6, vol: 0.1, vib: [7, 45] });
+      [0.72, 0.86, 1.0].forEach((d, i) => tone({ type: 'triangle', f: 760 - i * 40, f2: 640 - i * 40, dur: 0.07, vol: 0.08, delay: d }));
+    },
+
+    // The Beast, eating
+    slurp() {
+      tone({ type: 'sawtooth', f: 260, f2: 1500, dur: 0.5, vol: 0.06, filter: ['bandpass', 900, 2] });
+      noise({ f: 600, f2: 2600, ftype: 'bandpass', q: 3, dur: 0.45, vol: 0.18 });
+    },
+    gulp() {
+      tone({ type: 'sine', f: 340, f2: 80, dur: 0.24, vol: 0.3 });
+      noise({ f: 300, dur: 0.1, vol: 0.15 });
+    },
+    burp() {
+      tone({ type: 'sawtooth', f: 96, f2: 70, dur: 0.75, vol: 0.2, vib: [22, 18], filter: ['lowpass', 520] });
+      tone({ type: 'square', f: 140, f2: 90, dur: 0.6, vol: 0.05, vib: [19, 12], filter: ['lowpass', 400] });
+    },
 
     // Alex, shouting a warning from where she's hiding
     shout() {

@@ -371,6 +371,15 @@
         R(g, x + 5, y + 3, 3, 1, C.aHairS);
         R(g, x + 5, y + 6, 3, 3, C.mouth);
         break;
+      case 'cry':
+        // eyes screwed shut, mouth wide open, tear tracks
+        R(g, x + 5, y + 4, 3, 1, C.ink);
+        R(g, x + 6, y + 2, 2, 1, C.aHairS);
+        R(g, x + 5, y + 6, 4, 3, C.mouth);
+        R(g, x + 6, y + 8, 2, 1, C.lips);
+        R(g, x + 7, y + 5, 1, 1, '#7fd7ff');
+        R(g, x + 4, y + 5, 1, 3, '#7fd7ff');
+        break;
       case 'away':
         R(g, x + 4, y + 4, 1, 2, C.ink);
         R(g, x + 4, y + 3, 2, 1, C.aHairS);
@@ -434,6 +443,26 @@
     R(g, 21, 13, 2, 3, C.aSkin);
     R(g, 20, 17, 2, 2, C.aSkinS);
   }
+  // On her knees, sobbing. f flips between rubbing her eyes and a heave.
+  function alexCry(g, f) {
+    const b = f ? 1 : 0;
+    R(g, 2, 30, 10, 4, C.aJeansS);
+    R(g, 0, 31, 3, 3, C.aBoot);
+    R(g, 7, 26, 9, 5, C.aJeans);
+    R(g, 8, 18 + b, 8, 9 - b, C.aJacket);
+    R(g, 8, 18 + b, 2, 9 - b, C.aJacketS);
+    R(g, 14, 18 + b, 2, 4, C.shirtW);
+    R(g, 9, 18 + b, 5, 1, C.aCollar);
+    aHead(g, 8, 9 + b, 'cry');
+    if (f) {
+      R(g, 12, 19 + b, 2, 6, C.aJacket);
+      R(g, 12, 25, 3, 2, C.aSkin);
+    } else {
+      R(g, 13, 18, 3, 2, C.aJacket);
+      R(g, 15, 14, 2, 5, C.aJacket);
+      R(g, 14, 12, 3, 3, C.aSkin);
+    }
+  }
   function alexPeek(g) {
     aHead(g, 4, 4, 'worry');
     R(g, 12, 11, 3, 3, C.aSkin);
@@ -453,6 +482,8 @@
   };
   art.alex = function (pose, frame) {
     if (pose === 'kneel') return sprite('a-kneel', 24, 34, alexKneel);
+    if (pose === 'cry') return sprite('a-cry' + (frame & 1), 24, 34, (g) => alexCry(g, frame & 1));
+    if (pose === 'run') return sprite('a-run' + (frame & 3), 24, 34, (g) => alexBody(g, Object.assign({ face: 'scream' }, AWALK[frame & 3], { af: [3, -3] })));
     if (pose === 'peek') return sprite('a-peek', 16, 16, alexPeek);
     if (pose === 'walk') return sprite('a-walk' + (frame & 3), 24, 34, (g) => alexBody(g, AWALK[frame & 3]));
     return sprite('a-' + pose, 24, 34, (g) => alexBody(g, APOSE[pose] || APOSE.idle));
@@ -551,6 +582,21 @@
         for (let i = 0; i < 8; i++) R(g, 17 + m + i, 32, 1, 2, i % 2 ? '#c9c0ac' : '#e8e2d2');
         break;
       }
+      case 'tupper':
+      case 'tupperFull':
+        // leftovers
+        R(g, 12, 18 + b, 2, 4, C.mCardi);
+        R(g, 13, 21 + b, 4, 2, C.mCardi);
+        R(g, 15, 18 + b, 9, 6, '#e3edf2');
+        R(g, 15, 18 + b, 9, 1, '#3fa9ff');
+        R(g, 23, 19 + b, 1, 5, '#b8c8d0');
+        if (arms === 'tupperFull') {
+          R(g, 16, 20 + b, 6, 2, C.shoe);
+          R(g, 16, 22 + b, 6, 1, C.shoeS);
+          R(g, 15, 17 + b, 9, 1, '#2d7fd9');
+        }
+        R(g, 16, 22 + b, 2, 2, C.aSkin);
+        break;
       case 'score':
         R(g, 14, 15 + b, 3, 3, C.mCardi);
         R(g, 17, 7 + b, 2, 9, C.mCardi);
@@ -579,6 +625,8 @@
     mop2: { lf: [1, 0], lb: [-1, 0], arms: 'mop2', face: 'sigh' },
     score: { lf: [1, 0], lb: [-1, 0], arms: 'score', face: 'stern' },
     sigh: { lf: [1, 0], lb: [-1, 0], face: 'sigh' },
+    tupper: { lf: [1, 0], lb: [-1, 0], arms: 'tupper', face: 'sigh' },
+    tupperFull: { lf: [1, 0], lb: [-1, 0], arms: 'tupperFull', face: 'ok' },
   };
   art.mom = function (pose, frame) {
     if (pose === 'walk') return sprite('m-walk' + (frame & 3), 26, 34, (g) => momBody(g, MWALK[frame & 3]));
@@ -1056,7 +1104,32 @@
     R(g, 9, 7, 3, 1, BLOOD);
     R(g, 0, 12, 13, 1, BLOODD);
   }
+  // Zach, split down the middle. 'F' is the half with his face; 'B' is the back half, with the spine.
+  function zachHalf(g, side) {
+    const raw = canvasOf(24, 34);
+    zachBody(raw.getContext('2d'), ZPOSE.idle);
+    const d = raw.getContext('2d').getImageData(0, 0, 24, 34).data;
+    const solid = (x, y) => d[(y * 24 + x) * 4 + 3] > 0;
+    const cut = 12;
+    for (let y = 0; y < 34; y++) {
+      if (side === 'F') {
+        g.drawImage(raw, cut, y, 24 - cut, 1, 1, y, 24 - cut, 1);
+        if (!solid(cut, y)) continue;
+        R(g, 0, y, 1, 1, BLOODD);
+        R(g, 1, y, 1, 1, BLOOD);
+        if (y > 16 && y < 25 && y % 3 === 1) R(g, 1, y, 3, 1, '#efe6d2');
+      } else {
+        g.drawImage(raw, 0, y, cut, 1, 0, y, cut, 1);
+        if (!solid(cut - 1, y)) continue;
+        R(g, cut, y, 1, 1, BLOODD);
+        R(g, cut - 1, y, 1, 1, BLOOD);
+        if (y > 15 && y < 26 && y % 2 === 0) R(g, cut - 2, y, 2, 1, '#efe6d2');
+      }
+    }
+  }
   const GIBS = {
+    halfF: [13, 34, (g) => zachHalf(g, 'F')],
+    halfB: [13, 34, (g) => zachHalf(g, 'B')],
     head: [12, 13, (g) => {
       zHead(g, 1, 2, 'hurt');
       R(g, 3, 12, 5, 1, BLOOD);
