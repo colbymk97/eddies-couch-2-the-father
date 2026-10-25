@@ -142,7 +142,7 @@
     R(g, 30, TOP, 4, FLOOR - TOP, '#4a6178');
     paint.frame(g, 8, 110, 16, 20, 'portrait');
     paint.photosWall(g, 64, 320, TOP);
-    paint.frame(g, 206, 82, 22, 20, 'brandon');
+    paint.frame(g, 206, 82, 22, 20, 'family');
     paint.consoleTable(g, 418, 48, FLOOR - 24, FLOOR);
     paint.lamp(g, 430, FLOOR - 24);
     R(g, 448, FLOOR - 29, 12, 5, '#3d6fc4');

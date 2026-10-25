@@ -163,7 +163,7 @@
     for (let i = 0; i < 5; i++) R(g, 112 + i * 6, 212 + i * 3, 190 - i * 12, 26 - i * 6, rug[i]);
     paint.window(g, 290, 62, 54, 66, { curtain: '#6e2a33', sky: '#3b2b55' });
     paint.frame(g, 158, 62, 48, 24, 'stitch', C.wood);
-    paint.frame(g, 232, 82, 20, 24, 'brandon');
+    paint.frame(g, 232, 82, 20, 24, 'family');
     paint.frame(g, 362, 84, 18, 16, 'wedding');
     paint.frame(g, 76, 66, 26, 20, 'mountain', C.wood);
     paint.frame(g, 258, 112, 14, 12, 'dog');
@@ -195,7 +195,6 @@
       mom: { x: -20, face: 1, pose: 'hold', frame: 0, visible: false, to: null, speed: 60, arrived: false, dist: 0 },
       dad: { mode: 'seat', x: 182, remote: true, glasses: true, eyes: 'calm', pose: 'down', buttons: 4, sy: 1, grow: 0, stache: false, stomp: false, roar: false },
       horn: 0,
-      remote: null,
       glassesItem: null,
       dim: 0,
       lamp: 1,
@@ -417,7 +416,6 @@
     // lamp glow
     if (S.lamp > 0) art.glow(g, 124, 164, 46, 'rgba(255,214,140,0.35)', S.lamp);
     drawDoor(g, S.door);
-    if (S.remote) art.put(g, art.prop('remoteFlat'), S.remote.x, S.remote.y);
     if (S.glassesItem) art.put(g, art.prop('glasses'), S.glassesItem.x, S.glassesItem.y);
     // recliner / dad / beast
     const d = S.dad;
@@ -540,9 +538,6 @@
 
   // ================================================================ the front lawn (ending)
   const LY = 214;
-  // Brandon's spot, out by the mailbox
-  const GX = 352;
-  const GY = LY + 1;
   let lawnBg = null;
   function buildLawn() {
     const c = art.canvasOf(EC.W, EC.H);
@@ -609,7 +604,6 @@
       zach: { x: 216, y: 196, face: 1, pose: 'hurt', rot: 0, visible: true, gift: false, casserole: false },
       mom: null,
       toss: null,
-      grave: { wob: 0 },
       cam: { x: EC.W / 2, y: EC.H / 2, z: 1 },
       black: 1,
       parts: new EC.Particles(),
@@ -688,11 +682,6 @@
     R(g, 244, 128, 8, 10, E.porch > 0.5 ? '#fff2b0' : '#5a5040');
     R(g, 243, 126, 10, 2, '#2a2a30');
     if (E.porch > 0.5) art.glow(g, 248, 134, 60, 'rgba(255,220,150,0.55)');
-    // Brandon. Mom keeps him in casseroles.
-    const gr = E.grave || {};
-    art.put(g, art.prop('headstone'), GX, GY);
-    art.put(g, art.prop('casserole'), GX + 25, GY - 4);
-    art.put(g, art.hat('brandon'), GX + 4, GY - 25, { rot: 0.22 + Math.sin(E.t * 26) * (gr.wob || 0) });
     // zach
     const z = E.zach;
     if (z && z.visible) {
@@ -817,27 +806,14 @@
     S.zach.pose = 'grin';
     yield 0.5;
 
-    yield* say(cs, 'zach', 'Mr. — sir! Hey! We can’t stay long. We’re heading to a birthday party.');
+    yield* say(cs, 'zach', 'Sir! Hey! We can’t stay long. We’re heading to a birthday party.');
     yield* say(cs, 'alex', 'We just came to grab the gift, Daddy.');
     yield* say(cs, 'dad', 'His party.', { speed: 12 });
     yield 1.1;
     yield* say(cs, 'dad', 'The couch boy.', { cam: 'keep', speed: 22 });
     yield* say(cs, 'zach', 'Ha, yeah, that’s him.');
 
-    // He sets down the remote with great care.
-    shot(S, 'table');
-    S.dad.remote = false;
-    S.remote = { x: 166, y: 174 };
-    const r = S.remote;
-    const rs = cs.t;
-    yield () => {
-      const k = EC.ease.inOut(Math.min(1, (cs.t - rs) / 1.8));
-      r.x = EC.lerp(166, 140, k);
-      r.y = EC.lerp(174, 176, k) - Math.sin(k * Math.PI) * 5;
-      return k >= 1;
-    };
-    sfx.click();
-    yield 0.7;
+    yield 0.6;
     yield* say(cs, 'dad', 'Zachary. Before you go to the couch boy’s party. I believe you have something for me.');
     S.zach.pose = 'worry';
     yield* say(cs, 'zach', 'I... do?');
@@ -900,26 +876,30 @@
     sfx.click();
     yield* say(cs, 'dad', 'I want you to know, Zachary... I gave you every chance.');
 
-    // On the end table. Squared up. Patted once.
-    cs.tween(S.dad, { x: 154 }, 1.0);
-    yield 1.05;
+    // He carries them to the end table in his hand. Sets them down. Squares them up. Pats them once.
+    S.dad.pose = 'carry';
+    cs.tween(S.dad, { x: 154 }, 1.1);
+    yield 1.15;
     shot(S, 'table');
-    S.dad.pose = 'down';
-    S.glassesItem = { x: S.dad.x - 0.5, y: FY - 34 };
-    cs.tween(S.glassesItem, { x: 130, y: 176 }, 0.7, EC.ease.out);
-    yield 0.8;
+    yield 0.35;
+    S.dad.pose = 'place';
+    S.glassesItem = { x: 134, y: 176 };
     sfx.click();
+    yield 0.5;
+    S.dad.pose = 'down';
     yield 0.45;
-    S.glassesItem.x = 129;
+    S.dad.pose = 'place';
+    S.glassesItem.x = 133;
     sfx.click();
     yield 0.3;
-    S.glassesItem.x = 130;
+    S.glassesItem.x = 134;
     sfx.click();
-    yield 0.55;
+    yield 0.45;
     S.glassesItem.y = 177;
     sfx.pat();
     yield 0.16;
     S.glassesItem.y = 176;
+    S.dad.pose = 'down';
     yield 0.8;
     cs.tween(S.dad, { x: 182 }, 0.9);
     shot(S, 'dad');
@@ -950,26 +930,6 @@
     EC.fx.flash('#e8f0ff', 0.6);
     EC.fx.shake(4, 0.6);
     yield 0.9;
-    // The cardigan buttons go, one by one, like bullets. One takes Zach's hat.
-    for (let i = 0; i < 4; i++) {
-      S.dad.buttons = 3 - i;
-      const bx = S.dad.x - 5;
-      const by = FY - (52 - 16 - i * 3) * S.dad.sy;
-      const hatShot = i === 2;
-      const ang = hatShot ? Math.atan2(FY - 38 - by, S.zach.x - bx) : EC.rand(-Math.PI, 0);
-      const sp = 340;
-      S.parts.add({ spr: art.prop('button'), x: bx, y: by, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, g: 300, life: 2.2, vr: 20, floor: FY - 1, walls: [6, 474, TOP + 2], onBounce: () => sfx.ping() });
-      sfx.ping();
-      if (hatShot) {
-        yield 0.12;
-        S.zach.hat = false;
-        S.hatFly = { x: S.zach.x + 1, y: FY - 29, vx: 70, vy: -260, rot: 0, vr: 9 };
-        S.zach.pose = 'shock';
-        sfx.whoosh();
-        yield 0.3;
-      } else yield 0.36;
-    }
-    yield 0.9;
 
     // The mustache thickens. The khakis hold. Everything above them grows.
     shot(S, 'dad');
@@ -982,7 +942,29 @@
     EC.fx.shake(3, 2.4);
     cs.tween(S.dad, { grow: 1 }, 2.4, EC.ease.in);
     pan(cs, 'beast', 2.4);
-    yield 2.4;
+    // The cardigan can't hold him. The buttons blow off one by one, like bullets. One takes Zach's hat.
+    const g0 = cs.t;
+    for (let i = 0; i < 4; i++) {
+      yield () => cs.t - g0 >= 0.4 + i * 0.42;
+      S.dad.buttons = 3 - i;
+      const bx = S.dad.x - 3 + EC.rand(-3, 3);
+      const by = FY - 40 - S.dad.grow * 36 + i * 4;
+      const hatShot = i === 2;
+      const ang = hatShot ? Math.atan2(FY - 38 - by, S.zach.x - bx) : EC.rand(-Math.PI * 0.9, -Math.PI * 0.1);
+      S.parts.add({ spr: art.prop('button'), x: bx, y: by, vx: Math.cos(ang) * 420, vy: Math.sin(ang) * 420, g: 300, life: 2.2, vr: 20, floor: FY - 1, walls: [6, 474, TOP + 2], onBounce: () => sfx.ping() });
+      S.parts.burst(9, { x: bx, y: by, g: 260, s0: 40, s1: 150, life: 0.8, size: 2, color: [C.cardi, C.cardiS, C.cardiL, C.shirtW] });
+      sfx.pop();
+      sfx.ping();
+      EC.fx.shake(2 + i, 0.15);
+      if (hatShot) {
+        yield 0.1;
+        S.zach.hat = false;
+        S.hatFly = { x: S.zach.x + 1, y: FY - 29, vx: 70, vy: -260, rot: 0, vr: 9 };
+        S.zach.pose = 'shock';
+        sfx.whoosh();
+      }
+    }
+    yield () => cs.t - g0 >= 2.4;
     S.dad.mode = 'beast';
     ui.rec(true);
     EC.fx.flash('#ff2b2b', 0.3);
@@ -1005,11 +987,11 @@
     S.zach.face = 1;
     S.zach.pose = 'turn';
     yield 0.5;
-    yield* say(cs, 'zach', '...Again?', { speed: 16 });
+    yield* say(cs, 'zach', '...Again????', { speed: 16 });
+    // She looks away. That's all anyone is going to say about it.
     S.alex.pose = 'away';
-    yield* say(cs, 'alex', 'We don’t talk about Brandon.');
     S.zach.pose = 'shock';
-    yield* say(cs, 'zach', 'WHO IS BRANDON?');
+    yield 1.3;
 
     // Alex's mom comes in from the hallway with dinner. She has seen this before.
     shot(S, 'wide');
@@ -1184,62 +1166,17 @@
     sfx.lightsOff();
     zz.pose = 'worry';
     yield 0.8;
-    // He backs away from the house, eyes on the door, and into something.
-    zz.face = -1;
-    zz.pose = 'walk';
-    cs.tween(zz, { x: GX - 24 }, 1.5, EC.ease.inOut);
-    yield 1.5;
-    zz.pose = 'shock';
-    sfx.bonk();
-    EC.fx.shake(1.5, 0.15);
-    S.grave.wob = 0.35;
-    cs.tween(S.grave, { wob: 0 }, 1.0, EC.ease.out);
-    yield 0.7;
-    // He turns around, steps back, and reads it.
-    zz.face = 1;
-    zz.pose = 'down';
-    cs.tween(zz, { x: GX - 34 }, 0.35, EC.ease.out);
-    cs.tween(S.cam, { x: GX - 12, y: LY - 16, z: 2.6 }, 1.4, EC.ease.inOut);
-    yield 1.6;
     sfx.crickets();
-    yield 1.6;
-    yield* say(cs, 'zach', '...Oh.', { speed: 8 });
-    // The porch light comes on again.
-    S.porch = 1;
-    sfx.click();
-    cs.tween(S.cam, { x: 290, y: 172, z: 1.6 }, 0.6, EC.ease.inOut);
-    yield 0.5;
-    S.mom = { pose: 'point' };
-    cs.tween(S, { door: 1 }, 0.4);
-    sfx.creak();
-    yield 0.6;
-    yield* say(cs, 'mom', 'Mind Brandon, sweetie.');
-    cs.tween(S, { door: 0 }, 0.5);
-    yield 0.55;
-    S.mom = null;
-    sfx.click();
-    yield 0.3;
-    S.porch = 0;
-    sfx.lightsOff();
-    zz.pose = 'worry';
-    yield 0.7;
-    // He clears Brandon by a good three feet and does not stop.
-    cs.tween(S.cam, { x: EC.W / 2, y: EC.H / 2, z: 1 }, 1.0, EC.ease.inOut);
-    zz.pose = 'jump';
-    sfx.jump();
-    const jx = zz.x;
-    const js = cs.t;
-    yield () => {
-      const k = Math.min(1, (cs.t - js) / 0.55);
-      zz.x = EC.lerp(jx, GX + 32, k);
-      zz.y = LY - Math.sin(k * Math.PI) * 40;
-      return k >= 1;
-    };
-    zz.y = LY;
-    sfx.land();
+    yield 1.5;
+    // He goes. Walking, at first.
+    zz.face = 1;
+    zz.pose = 'walk';
+    cs.tween(zz, { x: zz.x + 46 }, 1.2);
+    yield 1.2;
     zz.pose = 'run';
-    cs.tween(zz, { x: EC.W + 40 }, 0.7);
-    yield 0.5;
+    sfx.whoosh();
+    cs.tween(zz, { x: EC.W + 40 }, 0.6, EC.ease.in);
+    yield 0.45;
     cs.tween(S, { black: 0.55 }, 0.6);
     yield 0.6;
   };

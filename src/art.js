@@ -634,11 +634,10 @@
   };
 
   // Party hats: 9x11, anchored at the brim.
-  // Brandon's has been out in the weather a while.
   art.hat = function (who) {
-    const a = { alex: C.blue, brandon: '#6f9a86' }[who] || C.pink;
-    const b = { alex: '#f4f1ea', brandon: '#cfc8a8' }[who] || C.yellow;
-    const pom = { alex: C.yellow, brandon: '#cfc8a8' }[who] || '#ffffff';
+    const a = who === 'alex' ? C.blue : C.pink;
+    const b = who === 'alex' ? '#f4f1ea' : C.yellow;
+    const pom = who === 'alex' ? C.yellow : '#ffffff';
     return sprite('hat-' + who, 9, 11, (g) => {
       const rows = [[4, 1], [4, 1], [3, 3], [3, 3], [2, 5], [2, 5], [1, 7], [1, 7], [0, 9]];
       rows.forEach(([x, w], i) => R(g, x, i + 2, w, 1, Math.floor(i / 2) % 2 ? b : a));
@@ -806,6 +805,23 @@
         R(g, 6, 28, 4, 3, C.skin);
         R(g, 30, 15, 7, 4, C.cardi);
         R(g, 37, 15, 3, 3, C.skin);
+      } else if (pose === 'carry') {
+        // the folded glasses in one hand, held out in front of him
+        R(g, 6, 15, 4, 8, C.cardi);
+        R(g, 7, 22, 7, 3, C.cardi);
+        R(g, 12, 21, 3, 3, C.skin);
+        R(g, 10, 19, 7, 2, C.glass);
+        R(g, 11, 19, 2, 1, C.lens);
+        R(g, 14, 19, 2, 1, C.lens);
+        R(g, 30, 15, 4, 13, C.cardi);
+        R(g, 30, 28, 4, 3, C.skin);
+      } else if (pose === 'place') {
+        // reaching over to the end table, hand flat on the glasses
+        R(g, 4, 15, 6, 4, C.cardi);
+        R(g, 1, 17, 4, 8, C.cardi);
+        R(g, 0, 24, 5, 3, C.skin);
+        R(g, 30, 15, 4, 13, C.cardi);
+        R(g, 30, 28, 4, 3, C.skin);
       } else if (pose === 'glasses') {
         R(g, 7, 15, 4, 8, C.cardi);
         R(g, 29, 15, 4, 8, C.cardi);
@@ -930,89 +946,164 @@
   };
   art.beastFrontEyes = [[-5, -93], [5, -93]];
 
-  // Side view for the chase, 78x88, facing right.
-  function bLeg(g, x, y, len, lift, col, shoe) {
-    const pants = len - 4 - lift;
-    R(g, x, y, 6, pants, col);
-    R(g, x - 1, y + pants, 10, 4, shoe);
-  }
-  function bArm(g, arm, b, back) {
-    // The front arm gets an ink pass first so it reads against his chest.
-    if (!back) {
-      const ink = (x, y, w, h) => R(g, x - 1, y - 1, w + 2, h + 2, C.ink);
-      armShape(ink, arm, b, 0);
-    }
-    armShape((x, y, w, h) => R(g, x, y, w, h, back ? C.bSkinS : C.bSkin), arm, b, back ? -16 : 0, back, g);
-  }
-  function armShape(R, arm, b, dx, back, g) {
-    switch (arm) {
-      case 'swing1':
-        R(46 + dx, 28 + b, 11, 15);
-        R(41 + dx, 41 + b, 10, 13);
-        R(38 + dx, 52 + b, 12, 10);
-        break;
-      case 'up':
-        R(44 + dx, 12 + b, 10, 20);
-        R(36 + dx, 3 + b, 11, 12);
-        R(33 + dx, 0 + b, 12, 9);
-        break;
-      case 'fwd':
-        R(50 + dx, 28 + b, 18, 11);
-        R(66 + dx, 27 + b, 11, 11);
-        break;
-      case 'down':
-        R(52 + dx, 38 + b, 10, 16);
-        R(54 + dx, 52 + b, 11, 10);
-        break;
-      case 'wide':
-        R(54 + dx, 18 + b, 16, 10);
-        R(66 + dx, 9 + b, 11, 12);
-        break;
-      case 'hold':
-        R(50 + dx, 28 + b, 10, 12);
-        R(52 + dx, 38 + b, 14, 8);
-        if (g && !back) {
-          art.R(g, 58, 31 + b, 13, 4, C.slipper);
-          art.R(g, 58, 35 + b, 13, 3, C.slipperS);
-          art.R(g, 59, 31 + b, 11, 1, C.slipperL);
+  // ---------------------------------------------------------------- shaded shapes
+  // For the Beast in profile: each part is a solid shape shaded from its own outline. The edge
+  // nearest the light gets the highlight, the far side falls into shadow, and where a part overlaps
+  // one drawn before it there's a dark seam, so the muscles read as muscles.
+  const shp = {
+    ell: (cx, cy, rx, ry, rot) => {
+      const c = Math.cos(rot || 0);
+      const s = Math.sin(rot || 0);
+      return (x, y) => {
+        const dx = x - cx;
+        const dy = y - cy;
+        const u = (dx * c + dy * s) / rx;
+        const v = (-dx * s + dy * c) / ry;
+        return u * u + v * v <= 1;
+      };
+    },
+    cap: (x1, y1, x2, y2, r1, r2) => (x, y) => {
+      const vx = x2 - x1;
+      const vy = y2 - y1;
+      const l2 = vx * vx + vy * vy;
+      const t = l2 ? EC.clamp(((x - x1) * vx + (y - y1) * vy) / l2, 0, 1) : 0;
+      const r = r1 + ((r2 == null ? r1 : r2) - r1) * t;
+      return (x - x1 - vx * t) ** 2 + (y - y1 - vy * t) ** 2 <= r * r;
+    },
+    poly: (pts) => (x, y) => {
+      let inside = false;
+      for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+        const [xi, yi] = pts[i];
+        const [xj, yj] = pts[j];
+        if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
+      }
+      return inside;
+    },
+  };
+  function shaded(w, h) {
+    const col = new Array(w * h).fill(null);
+    const own = new Int16Array(w * h).fill(-1);
+    const L = [-0.45, -0.89];
+    let n = 0;
+    return {
+      part(shapes, ramp, o) {
+        o = o || {};
+        const id = n++;
+        const M = new Uint8Array(w * h);
+        for (let y = 0; y < h; y++) {
+          for (let x = 0; x < w; x++) if (shapes.some((f) => f(x + 0.5, y + 0.5))) M[y * w + x] = 1;
         }
-        R(62 + dx, 36 + b, 9, 9);
-        break;
-      default:
-        R(50 + dx, 28 + b, 11, 15);
-        R(54 + dx, 41 + b, 10, 13);
-        R(55 + dx, 52 + b, 12, 10);
+        const inM = (x, y) => x >= 0 && y >= 0 && x < w && y < h && M[y * w + x] === 1;
+        const steps = (x, y, dx, dy, max) => {
+          for (let k = 1; k <= max; k++) if (!inM(Math.round(x + dx * k), Math.round(y + dy * k))) return k;
+          return max + 1;
+        };
+        const soft = o.soft || 3;
+        for (let y = 0; y < h; y++) {
+          for (let x = 0; x < w; x++) {
+            const i = y * w + x;
+            if (!M[i]) continue;
+            const lit = steps(x, y, L[0], L[1], 2);
+            const dark = steps(x, y, -L[0], -L[1], soft + 2);
+            let c = lit <= 1 ? ramp[3] : dark <= 1 ? ramp[0] : dark <= soft ? ramp[1] : ramp[2];
+            for (const [dx, dy] of [[1, 0], [0, 1], [-1, 0], [0, -1]]) {
+              const nx = x + dx;
+              const ny = y + dy;
+              if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+              const j = ny * w + nx;
+              if (!M[j] && own[j] !== -1 && dx * L[0] + dy * L[1] < 0.3) {
+                c = ramp[0];
+                break;
+              }
+            }
+            col[i] = c;
+            own[i] = id;
+          }
+        }
+      },
+      paint(g) {
+        for (let i = 0; i < col.length; i++) if (col[i]) R(g, i % w, Math.floor(i / w), 1, 1, col[i]);
+      },
+    };
+  }
+
+  // Side view for the chase, 78x88, facing right. Hunched, all shoulders, the khakis holding.
+  // Hands and eyes stay where the throws and the deaths expect them (see beastHand and beastSideEye).
+  const BR = {
+    skin: ['#8e4636', C.bSkinS, C.bSkin, C.bSkinL],
+    skinB: ['#5e2c22', '#7e3e30', '#a35c48', '#c27a62'],
+    khaki: ['#7a6438', C.khakiS, C.khaki, '#e3cf9c'],
+    khakiB: ['#4e3f22', '#6a5630', '#8d7848', '#a89160'],
+    cardi: ['#3e121b', C.cardiS, C.cardi, C.cardiL],
+    cardiB: ['#2a0b12', '#3e121b', C.cardiS, C.cardi],
+    horn: ['#8a7d5c', C.hornS, C.horn, '#fff5dc'],
+    hornB: ['#5e5440', '#8a7d5c', C.hornS, C.horn],
+    slip: ['#2e1e15', C.slipperS, C.slipper, C.slipperL],
+    sock: ['#9a9488', C.sockS, C.sock, '#ffffff'],
+    stache: ['#3a3028', C.stacheS, C.stache, C.stacheL],
+    hair: ['#6e6960', C.dHairS, C.dHair, '#dcd8d0'],
+  };
+  // Shoulder, elbow, fist for each arm pose (the back arm is the same, 16px further back).
+  const BARMS = {
+    swing0: [[54, 31], [58, 45], [61, 56]],
+    swing1: [[52, 31], [47, 45], [44, 56]],
+    up: [[52, 29], [46, 15], [39, 5]],
+    fwd: [[54, 32], [64, 34], [72, 32]],
+    down: [[54, 32], [57, 45], [60, 56]],
+    wide: [[55, 29], [63, 22], [72, 15]],
+    hold: [[54, 32], [57, 42], [67, 40]],
+  };
+  function bArmParts(P, arm, b, back) {
+    const j = BARMS[arm] || BARMS.swing0;
+    const dx = back ? -16 : 0;
+    const [S, E, F] = j.map(([x, y]) => [x + dx, y + b]);
+    const ramp = back ? BR.skinB : BR.skin;
+    const mid = [(S[0] + E[0]) / 2, (S[1] + E[1]) / 2];
+    const ang = Math.atan2(E[1] - S[1], E[0] - S[0]);
+    P.part([shp.cap(S[0], S[1], E[0], E[1], 6, 5.2), shp.ell(mid[0], mid[1], 6, 4.4, ang)], ramp, { soft: 3 });
+    P.part([shp.cap(E[0], E[1], F[0], F[1], 5.3, 4.6)], ramp, { soft: 3 });
+    P.part([shp.ell(F[0], F[1], 5.4, 5)], ramp, { soft: 3 });
+    return F;
+  }
+  function bLegParts(P, hipX, dx, lift, ramp, foot) {
+    const knee = [hipX + dx * 0.5, 74 - lift * 0.6];
+    const ankle = [hipX + dx, 83 - lift];
+    P.part([shp.cap(hipX, 67, knee[0], knee[1], 5.2, 4.6), shp.cap(knee[0], knee[1], ankle[0], ankle[1], 4.6, 3.8)], ramp, { soft: 3 });
+    P.part([shp.ell(ankle[0] + 2.5, ankle[1] + 2.6, 6.2, 2.8)], foot, { soft: 2 });
+  }
+  function bHeadParts(P, hx, hy, roar) {
+    P.part([shp.cap(hx + 2, hy + 3, hx - 3, hy - 3, 2.8, 2.1), shp.cap(hx - 3, hy - 3, hx - 2, hy - 7, 2.1, 1)], BR.hornB);
+    P.part([shp.ell(hx + 2, hy + 11, 2.2, 3.2)], BR.skin);
+    P.part([shp.ell(hx + 8, hy + 11, 9.5, 10), shp.ell(hx + 14, hy + 16, 7.5, 6.2)], BR.skin, { soft: 4 });
+    P.part([shp.poly([[hx + 0.5, hy + 7], [hx + 3, hy + 3], [hx + 9, hy + 1.5], [hx + 6, hy + 4.5], [hx + 3.5, hy + 9], [hx + 3, hy + 14], [hx + 0.5, hy + 13]])], BR.hair);
+    P.part([shp.cap(hx + 9, hy + 3, hx + 14, hy - 3, 3.1, 2.7), shp.cap(hx + 14, hy - 3, hx + 19, hy - 4, 2.7, 2), shp.cap(hx + 19, hy - 4, hx + 22, hy - 1, 2, 1)], BR.horn);
+    P.part([shp.ell(hx + 19.5, hy + 11.5, 2.6, 3.1)], BR.skin, { soft: 2 });
+    if (roar) {
+      P.part([shp.poly([[hx + 10, hy + 13], [hx + 22, hy + 12], [hx + 23.5, hy + 17], [hx + 10, hy + 17.5]])], BR.stache);
+    } else {
+      P.part([shp.poly([[hx + 10.5, hy + 14], [hx + 22, hy + 13], [hx + 23.5, hy + 18.5], [hx + 19, hy + 17.5], [hx + 15, hy + 18.5], [hx + 10.5, hy + 17.5]])], BR.stache);
     }
   }
-  function bHead(g, hx, hy, roar) {
-    R(g, hx - 5, hy - 3, 4, 4, C.hornS);
-    R(g, hx - 2, hy - 5, 5, 5, C.hornS);
-    R(g, hx + 2, hy - 2, 5, 5, C.hornS);
-    R(g, hx - 1, hy + 1, 20, 20, C.ink);
-    R(g, hx, hy + 2, 18, 18, C.bSkin);
-    R(g, hx + 1, hy + 1, 15, 1, C.bSkin);
-    R(g, hx + 4, hy + 3, 7, 2, C.bSkinL);
-    R(g, hx, hy + 8, 4, 8, C.dHair);
-    R(g, hx + 3, hy + 10, 3, 4, C.bSkinS);
-    R(g, hx + 9, hy - 1, 5, 4, C.horn);
-    R(g, hx + 12, hy - 5, 5, 5, C.horn);
-    R(g, hx + 16, hy - 4, 4, 4, C.horn);
-    R(g, hx + 18, hy - 1, 3, 3, C.hornS);
-    R(g, hx + 10, hy + 6, 9, 2, C.stacheS);
-    R(g, hx + 13, hy + 8, 4, 2, C.eye);
-    R(g, hx + 18, hy + 9, 3, 5, C.bSkin);
-    R(g, hx + 18, hy + 13, 3, 1, C.bSkinS);
+  function bHeadDetails(g, hx, hy, roar) {
+    // angry brow, the eye, nostril, horn rings
+    R(g, hx + 10, hy + 6, 3, 1, '#5a2418');
+    R(g, hx + 12, hy + 7, 3, 1, '#5a2418');
+    R(g, hx + 13, hy + 8, 2, 2, C.eye);
+    R(g, hx + 13, hy + 8, 1, 1, '#ffd0c0');
+    R(g, hx + 20, hy + 13, 1, 1, '#5a2418');
+    R(g, hx + 13, hy - 1, 1, 2, C.hornS);
+    R(g, hx + 17, hy - 4, 1, 2, C.hornS);
     if (roar) {
-      R(g, hx + 11, hy + 17, 9, 6, C.mouth);
-      R(g, hx + 12, hy + 17, 7, 1, C.white);
-      R(g, hx + 12, hy + 22, 7, 1, C.white);
-      R(g, hx + 10, hy + 14, 11, 3, C.stache);
-      R(g, hx + 19, hy + 15, 3, 4, C.stache);
+      R(g, hx + 11, hy + 17, 10, 7, C.mouth);
+      R(g, hx + 12, hy + 23, 8, 1, C.mouth);
+      for (let x = 0; x < 8; x += 2) R(g, hx + 12 + x, hy + 17, 1, 1, C.white);
+      R(g, hx + 12, hy + 18, 1, 2, C.white);
+      R(g, hx + 19, hy + 18, 1, 2, C.white);
+      for (let x = 0; x < 6; x += 2) R(g, hx + 13 + x, hy + 22, 1, 1, C.white);
+      R(g, hx + 14, hy + 21, 4, 1, '#b8404e');
     } else {
-      R(g, hx + 10, hy + 19, 10, 2, C.bSkinS);
-      R(g, hx + 11, hy + 14, 11, 4, C.stache);
-      R(g, hx + 19, hy + 17, 3, 4, C.stache);
-      R(g, hx + 12, hy + 14, 9, 1, C.stacheL);
+      R(g, hx + 12, hy + 19, 9, 1, C.bSkinS);
+      R(g, hx + 12, hy + 15, 9, 1, C.stacheL);
     }
   }
   const BLEGS = [
@@ -1021,7 +1112,7 @@
     { lf: [-5, 1], lb: [5, 0] },
     { lf: [-1, 0], lb: [1, 2], bob: 1 },
   ];
-  // o: { frame, arm, armB, head: 'n'|'roar'|'low', drop, socks }
+  // o: { frame, arm, armB, head: 'n'|'roar'|'low', drop, socks, legUp: 'kick'|'stomp' }
   art.beastSide = function (o) {
     const legs = o.still ? { lf: [2, 0], lb: [-3, 0] } : BLEGS[(o.frame || 0) & 3];
     const arm = o.arm || ((o.frame || 0) & 2 ? 'swing1' : 'swing0');
@@ -1029,41 +1120,56 @@
     const key = 'beast-s-' + (o.still ? 's' : (o.frame || 0) & 3) + arm + armB + (o.head || 'n') + (o.drop | 0) + (o.socks ? 'x' : '') + (o.legUp || '');
     return sprite(key, 78, 88, (g) => {
       const b = (legs.bob | 0) + (o.drop | 0);
-      const foot = o.socks ? C.sock : C.slipper;
-      const footB = o.socks ? C.sockS : C.slipperS;
-      bLeg(g, 30 + legs.lb[0], 68, 20, legs.lb[1], C.khakiS, footB);
-      bArm(g, armB, b, true);
-      R(g, 22, 22 + b, 40, 10, C.bSkin);
-      R(g, 16, 30 + b, 50, 18, C.bSkin);
-      R(g, 22, 48 + b, 36, 12, C.bSkin);
-      R(g, 28, 58 + b, 24, Math.max(2, 9 - b), C.bSkin);
-      R(g, 16, 30 + b, 4, 18, C.bSkinS);
-      R(g, 22, 22 + b, 6, 8, C.bSkinS);
-      R(g, 40, 38 + b, 22, 2, C.bSkinS);
-      R(g, 44, 48 + b, 12, 1, C.bSkinS);
-      R(g, 46, 54 + b, 10, 1, C.bSkinS);
-      R(g, 28, 24 + b, 16, 3, C.bSkinL);
-      R(g, 30, 21 + b, 18, 7, C.cardi);
-      R(g, 31, 28 + b, 4, 4, C.cardi);
-      R(g, 39, 28 + b, 3, 3, C.cardi);
-      R(g, 30, 21 + b, 18, 2, C.cardiL);
-      R(g, 28, 64, 24, 4, C.belt);
-      R(g, 47, 64, 3, 4, C.brass);
+      const foot = o.socks ? BR.sock : BR.slip;
+      const P = shaded(78, 88);
+      // behind him: the far leg, the far arm
+      bLegParts(P, 34, legs.lb[0], legs.lb[1], BR.khakiB, foot);
+      bArmParts(P, armB, b, true);
+      // the body: back, belly, chest, the traps that swallow his neck
+      P.part([shp.ell(38, 40 + b, 22, 16)], BR.skin, { soft: 6 });
+      P.part([shp.ell(44, 54 + b, 15, 10)], BR.skin, { soft: 4 });
+      P.part([shp.poly([[29, 56 + b], [53, 56 + b], [53, 66], [29, 66]])], BR.skin, { soft: 3 });
+      P.part([shp.ell(54, 43 + b, 12.5, 11, -0.3)], BR.skin, { soft: 5 });
+      P.part([shp.ell(51, 28 + b, 11, 7, -0.4)], BR.skin, { soft: 3 });
+      // what's left of the cardigan, over his shoulders
+      P.part([shp.poly([[24, 27 + b], [48, 20 + b], [60, 25 + b], [58, 32 + b], [54, 29 + b], [50, 36 + b], [45, 30 + b], [40, 37 + b], [35, 30 + b], [30, 35 + b], [26, 31 + b]])], BR.cardi);
+      // khakis: belt, then the near leg
+      P.part([shp.poly([[28, 62], [54, 62], [54, 68], [28, 68]])], BR.khaki);
       if (o.legUp === 'kick') {
-        // a slipper, straight out
-        R(g, 38, 61, 17, 7, C.khaki);
-        R(g, 38, 61, 17, 1, C.khakiS);
-        R(g, 54, 57, 5, 12, foot);
+        P.part([shp.cap(43, 65, 50, 64, 4.8, 4.6), shp.cap(50, 64, 55, 63, 4.6, 4)], BR.khaki);
+        P.part([shp.ell(57, 63, 2.8, 6.2)], foot, { soft: 2 });
       } else if (o.legUp === 'stomp') {
-        // knee up, slipper raised
-        R(g, 37, 56, 13, 6, C.khaki);
-        R(g, 45, 56, 6, 14, C.khaki);
-        R(g, 43, 69, 11, 4, foot);
-      } else bLeg(g, 36 + legs.lf[0], 68, 20, legs.lf[1], C.khaki, foot);
-      if (o.head === 'low') bHead(g, 54, 36 + b, false);
-      else if (o.head === 'roar') bHead(g, 52, 4 + b, true);
-      else bHead(g, 51, 9 + b, false);
-      bArm(g, arm, b, false);
+        P.part([shp.cap(43, 66, 49, 60, 4.8, 4.6), shp.cap(49, 60, 49, 69, 4.6, 4)], BR.khaki);
+        P.part([shp.ell(51, 71.5, 6.2, 2.8)], foot, { soft: 2 });
+      } else bLegParts(P, 41, legs.lf[0], legs.lf[1], BR.khaki, foot);
+      // head
+      const hp = o.head === 'low' ? [54, 36 + b] : o.head === 'roar' ? [52, 4 + b] : [51, 9 + b];
+      bHeadParts(P, hp[0], hp[1], o.head === 'roar');
+      // the near arm, last, across his chest
+      const fist = bArmParts(P, arm, b, false);
+      P.paint(g);
+      // the belt, chest and belly lines, grey dad chest hair, knuckles
+      R(g, 28, 63, 26, 3, C.belt);
+      R(g, 47, 63, 3, 3, C.brass);
+      R(g, 48, 64, 1, 1, C.belt);
+      R(g, 44, 52 + b, 9, 1, C.bSkinS);
+      R(g, 40, 58 + b, 2, 1, C.bSkinS);
+      R(g, 45, 57 + b, 2, 1, C.bSkinS);
+      R(g, 43, 61 + b, 1, 1, '#8e4636');
+      [[56, 47], [58, 48], [57, 50], [59, 46]].forEach(([x, y]) => R(g, x, y + b, 1, 1, C.dHairS));
+      R(g, 32, 24 + b, 6, 1, C.cardiL);
+      R(g, fist[0] + 1, fist[1] - 3, 1, 1, C.bSkinS);
+      R(g, fist[0] + 3, fist[1] - 1, 1, 1, C.bSkinS);
+      R(g, fist[0] + 2, fist[1] + 1, 1, 1, C.bSkinS);
+      if (arm === 'hold') {
+        // his slippers, carried across the carpet
+        R(g, 58, 31 + b, 13, 4, C.slipper);
+        R(g, 58, 35 + b, 13, 3, C.slipperS);
+        R(g, 59, 31 + b, 11, 1, C.slipperL);
+        R(g, 64, 36 + b, 6, 6, C.bSkin);
+        R(g, 64, 36 + b, 6, 1, C.bSkinL);
+      }
+      bHeadDetails(g, hp[0], hp[1], o.head === 'roar');
     });
   };
   // Eye position relative to the feet anchor (facing right) for each head pose.
@@ -1251,39 +1357,6 @@
       R(g, 4, 2, 2, 1, '#b8642a');
       R(g, 10, 1, 2, 1, '#b8642a');
     }, true],
-    // Brandon. In the front yard. Anchored at the middle of the base.
-    headstone: [37, 26, (g) => {
-      const stone = '#9a98a8';
-      const lite = '#b9b7c6';
-      const shade = '#76748a';
-      R(g, 11, 0, 15, 1, stone);
-      R(g, 7, 1, 23, 1, stone);
-      R(g, 4, 2, 29, 2, stone);
-      R(g, 2, 4, 33, 18, stone);
-      R(g, 2, 4, 2, 18, lite);
-      R(g, 4, 2, 2, 2, lite);
-      R(g, 33, 4, 2, 18, shade);
-      R(g, 0, 22, 37, 4, shade);
-      R(g, 0, 22, 37, 1, lite);
-      // a little chisel font, just the letters it needs
-      const GL = {
-        B: ['110', '101', '110', '101', '110'],
-        R: ['110', '101', '110', '101', '101'],
-        A: ['010', '101', '111', '101', '101'],
-        N: ['1001', '1101', '1011', '1001', '1001'],
-        D: ['110', '101', '101', '101', '110'],
-        O: ['111', '101', '101', '101', '111'],
-      };
-      let x = 4;
-      'BRANDON'.split('').forEach((ch) => {
-        GL[ch].forEach((row, y) => {
-          for (let i = 0; i < row.length; i++) if (row[i] === '1') R(g, x + i, 7 + y, 1, 1, '#4a4858');
-        });
-        x += GL[ch][0].length + 1;
-      });
-      R(g, 12, 14, 13, 1, shade);
-      R(g, 14, 16, 9, 1, shade);
-    }],
     remote: [12, 5, (g) => {
       R(g, 0, 0, 12, 5, '#2b2b30');
       R(g, 9, 1, 2, 2, '#ff4040');
@@ -1390,12 +1463,16 @@
       R(g, 1, 0, 5, 1, C.slipperL);
       R(g, 10, 0, 5, 1, C.slipperL);
     }, false],
-    glasses: [9, 3, (g) => {
-      R(g, 0, 0, 4, 3, C.glass);
-      R(g, 5, 0, 4, 3, C.glass);
-      R(g, 1, 1, 2, 1, C.lens);
-      R(g, 6, 1, 2, 1, C.lens);
-      R(g, 4, 1, 1, 1, C.glass);
+    // his reading glasses, folded: two lenses with a shine, the arms tucked behind
+    glasses: [11, 5, (g) => {
+      R(g, 1, 0, 9, 1, C.metal);
+      R(g, 0, 1, 5, 4, C.glass);
+      R(g, 6, 1, 5, 4, C.glass);
+      R(g, 1, 2, 3, 2, C.lens);
+      R(g, 7, 2, 3, 2, C.lens);
+      R(g, 1, 2, 1, 1, '#ffffff');
+      R(g, 7, 2, 1, 1, '#ffffff');
+      R(g, 5, 2, 1, 1, C.glass);
     }, false],
     remoteFlat: [10, 3, (g) => {
       R(g, 0, 0, 10, 3, '#2b2b30');
@@ -1630,7 +1707,7 @@
     const iw = w - 4;
     const ih = h - 4;
     R(g, ix, iy, iw, ih, C.ink);
-    const bg = { family: '#9cc3d9', brandon: '#9fd3a0', fruit: '#e9dcc0', sailboat: '#7fb3d9', portrait: '#c9a26e', dog: '#e8d5a8', wedding: '#e9e4f2', stitch: '#f4f1ea', calendar: '#f4f1ea', mountain: '#a7c7e7' }[kind] || '#cfc8b8';
+    const bg = { family: '#9cc3d9', fruit: '#e9dcc0', sailboat: '#7fb3d9', portrait: '#c9a26e', dog: '#e8d5a8', wedding: '#e9e4f2', stitch: '#f4f1ea', calendar: '#f4f1ea', mountain: '#a7c7e7' }[kind] || '#cfc8b8';
     R(g, ix + 1, iy + 1, iw - 2, ih - 2, bg);
     const fx = ix + 1;
     const fy = iy + 1;
@@ -1646,12 +1723,6 @@
         person(fx + 2, fy + fh - 8, C.cardi, C.dHair);
         person(fx + 6, fy + fh - 8, '#c77c56', '#8a5a38');
         person(fx + 10, fy + fh - 8, C.aJacket, C.aHair);
-        break;
-      case 'brandon':
-        person(fx + 3, fy + fh - 8, C.aJacket, C.aHair);
-        person(fx + fw - 7, fy + fh - 8, '#3a5a8a', '#3a2a1a');
-        R(g, fx + fw - 9, fy + fh - 10, 6, 6, '#ffe45c');
-        R(g, fx + fw - 8, fy + fh - 8, 4, 1, '#c9a400');
         break;
       case 'fruit':
         R(g, fx + 1, fy + fh - 4, fw - 2, 4, '#7a4a2a');

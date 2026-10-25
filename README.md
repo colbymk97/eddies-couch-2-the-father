@@ -56,7 +56,6 @@ Alex's mom is completely unbothered by all of this.
 - **In the kitchen** she's stirring a pot. She waves when Zach runs past. If the Beast comes through while she's there, she points at him and he stops dead for a second, head down.
 - **After every death** she comes in with a mop and a roll of plastic sheeting and tidies up. She hangs the frame back up straight, carries the head back to its body, tapes the two halves back together with packing tape, puts the burped-up sneaker in a Tupperware, wipes the TV screen, and holds up her own scorecard for Flawless: a 4.
 - **At the end** the porch light comes on and she hands Zach a casserole for the road, or the gift if he left it behind. Then: "And Zachary? Find the game."
-- **Brandon** is buried in the front yard, out by the mailbox, wearing his party hat. She keeps a casserole on him. When Zach backs into the headstone, she opens the door just long enough to say "Mind Brandon, sweetie."
 
 ## Code
 
