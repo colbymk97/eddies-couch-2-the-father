@@ -31,6 +31,7 @@
       this.gary = 0;
       this.red = 0;
       this.glass = null;
+      this.screenBlood = [];
       this.mom = null;
       this.alex = null;
       this.tears = new EC.Particles();
@@ -158,6 +159,53 @@
         const s = EC.rand(30, 90);
         this.bits.add({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, g: 20, life: EC.rand(0.6, 1), size: EC.pick([1, 2]), color: EC.pick(['#ffd23e', '#ffffff', '#7fd7ff']) });
       }
+    }
+    // Where a point in the room lands on the TV screen right now.
+    toScreen(wx, wy) {
+      const c = this.cam;
+      const k = EC.clamp((c.z - 1) * 2, 0, 1);
+      return [EC.W / 2 + (wx - c.x) * c.z, EC.lerp(c.y, EC.H / 2, k) + (wy - c.y) * c.z];
+    }
+    // Blood on the glass of the TV: it hits where the hit was, spatters outward, then runs.
+    splash(wx, wy, power) {
+      const p = power || 1;
+      const [cx, cy] = this.toScreen(wx, wy);
+      const blobs = Math.round(3 + p * 3);
+      for (let i = 0; i < blobs; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const d = Math.sqrt(Math.random()) * 46 * p;
+        const x = EC.clamp(cx + Math.cos(a) * d, 2, EC.W - 2);
+        const y = EC.clamp(cy + Math.sin(a) * d * 0.7, 2, EC.H - 2);
+        const r = EC.rand(2, 4 + p * 3.5);
+        const away = Math.atan2(y - cy, x - cx);
+        const lobes = [];
+        for (let j = 0; j < 4; j++) {
+          const b2 = Math.random() * Math.PI * 2;
+          lobes.push([Math.cos(b2) * r * 0.6, Math.sin(b2) * r * 0.6, r * EC.rand(0.3, 0.6)]);
+        }
+        // streaks thrown outward from the hit, each ending in a drop
+        const spikes = [];
+        const ns = 2 + Math.floor(Math.random() * 4);
+        for (let j = 0; j < ns; j++) spikes.push([away + EC.rand(-0.9, 0.9), r * EC.rand(1.3, 2.8)]);
+        const flecks = [];
+        for (let j = 0; j < 7; j++) {
+          const b2 = away + EC.rand(-1.4, 1.4);
+          const dd = r * EC.rand(1.8, 4);
+          flecks.push([Math.cos(b2) * dd, Math.sin(b2) * dd, Math.random() < 0.3 ? 2 : 1]);
+        }
+        this.screenBlood.push({
+          x, y, r, lobes, spikes, flecks, t: 0, dx: EC.rand(-r * 0.4, r * 0.4),
+          drip: 0, dripMax: Math.random() < 0.7 ? EC.rand(10, 34 + p * 22) : 0, dripV: EC.rand(6, 16),
+          c: EC.pick(['#d6102b', '#c00d26', '#e01535']),
+        });
+      }
+      // and a fine spray around it
+      for (let i = 0; i < 26 * p; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const d = EC.rand(8, 95) * p;
+        this.screenBlood.push({ x: cx + Math.cos(a) * d, y: cy + Math.sin(a) * d * 0.7, r: EC.pick([0.6, 1, 1, 1.4]), t: 0, drip: 0, dripMax: 0, c: EC.pick(RED) });
+      }
+      sfx.splat();
     }
     hole(x) {
       this.decals.push({ kind: 'hole', x });
@@ -305,6 +353,13 @@
       this.blood.update(d);
       this.bits.update(d);
       if (this.glass) this.glass.t += dt;
+      for (const b of this.screenBlood) {
+        b.t += dt;
+        if (b.drip < b.dripMax && b.t > 0.25) {
+          b.drip = Math.min(b.dripMax, b.drip + b.dripV * dt);
+          b.dripV *= 1 - dt * 0.25;
+        }
+      }
     }
 
     // Decals sit on the wall and floor, behind everyone.
@@ -395,10 +450,50 @@
         for (let x = 0; x < EC.W; x += 6) g.fillRect(x, EC.H - h - 2 - ((x * 7) % 5), 4, 3);
         g.globalAlpha = 1;
       }
+      this.drawBlood(g);
       if (this.glass) this.drawGlass(g);
       if (this.gary > 0) this.drawGary(g);
       if (this.momScore > 0) this.drawMomScore(g);
       if (this.wipe > 0 && this.wipe < 1) this.drawWipe(g);
+    }
+    drawBlood(g) {
+      const clearX = this.wipe > 0 ? -40 + this.wipe * (EC.W + 80) : -1e4;
+      const disc = (x, y, r, c) => art.disc(g, Math.round(x), Math.round(y), Math.max(0, Math.round(r)), c);
+      g.save();
+      g.globalAlpha = 0.93;
+      for (const b of this.screenBlood) {
+        if (b.x < clearX) continue;
+        if (b.r < 2) {
+          R(g, Math.round(b.x), Math.round(b.y), b.r > 1 ? 2 : 1, b.r > 1 ? 2 : 1, b.c);
+          continue;
+        }
+        const k = Math.min(1, b.t / 0.06);
+        const r = b.r * (0.55 + 0.45 * k);
+        // streaks, tapering out to a drop
+        for (const [ang, len] of b.spikes) {
+          const L = len * k;
+          const n = Math.ceil(L);
+          for (let i = 0; i <= n; i++) {
+            const t = i / Math.max(1, n);
+            const w = t < 0.5 ? 2 : 1;
+            R(g, Math.round(b.x + Math.cos(ang) * (r * 0.6 + L * t)), Math.round(b.y + Math.sin(ang) * (r * 0.6 + L * t)), w, w, b.c);
+          }
+          disc(b.x + Math.cos(ang) * (r * 0.6 + L + 1), b.y + Math.sin(ang) * (r * 0.6 + L + 1), 1, b.c);
+        }
+        // the splat, with a thicker, darker middle
+        disc(b.x, b.y, r, b.c);
+        for (const [lx, ly, lr] of b.lobes) disc(b.x + lx * k, b.y + ly * k, lr, b.c);
+        disc(b.x + 0.5, b.y + 0.5, r * 0.5, '#a80d24');
+        // it runs
+        if (b.drip > 0) {
+          R(g, Math.round(b.x + b.dx) - 1, Math.round(b.y), 2, Math.round(b.drip), b.c);
+          disc(b.x + b.dx, b.y + b.drip, 1.4, '#a80d24');
+        }
+        for (const [fx, fy, fs] of b.flecks) R(g, Math.round(b.x + fx * k), Math.round(b.y + fy * k), fs, fs, b.c);
+        // wet shine
+        R(g, Math.round(b.x - r * 0.45), Math.round(b.y - r * 0.55), 2, 1, '#ff8a94');
+      }
+      g.restore();
     }
     drawGlass(g) {
       const G = this.glass;
@@ -525,6 +620,7 @@
       sfx.squeegee();
       yield 0.8;
       F.glass = null;
+      F.screenBlood = [];
       yield 0.5;
       return;
     }
@@ -688,6 +784,7 @@
     F.bitsBurst(z.x, FLOOR, 16, ['#8a5a38', '#5a3419', '#a8784f'], { s0: 80, s1: 260 });
     F.bleed(z.x, FLOOR - 2, 22, { a0: -2.6, a1: -0.5, s0: 100, s1: 260 });
     F.pool(z.x, 26);
+    F.splash(z.x, FLOOR - 8, 1);
     yield 0.45;
     F.camTo(2.4, z.x - 4, FLOOR - 26, 0.5);
     F.pose({ arm: 'swing0', armB: 'swing1', head: 'n' });
@@ -735,6 +832,7 @@
     sfx.kachunk();
     F.bleed(cube.x, cube.y, 16, { s0: 80, s1: 240 });
     F.splatWall(cube.x, cube.y - 10, 12, 30);
+    F.splash(cube.x, cube.y, 1);
     F.shake(4, 0.25);
     yield 0.7;
     F.pose({ arm: 'down', armB: 'down', head: 'low', drop: 12 });
@@ -788,6 +886,7 @@
     F.shake(5, 0.25);
     F.bleed(mx, my + 2, 14, { a0: -0.4, a1: Math.PI + 0.4, s0: 40, s1: 160 });
     F.fountain({ x: mx + 3, y: my + 7, dur: 3.2, rate: 12, a: Math.PI / 2, spread: 0.3, s0: 10, s1: 40 });
+    F.splash(mx, my, 1.1);
     // chewing, legs still going
     for (let i = 0; i < 8; i++) {
       F.pose({ arm: 'swing0', armB: 'swing1', head: i % 2 ? 'roar' : 'n' });
@@ -858,6 +957,7 @@
     sfx.smash();
     F.shake(6, 0.3);
     F.bleed(z.x, z.y - 14, 12, { a0: -2.2, a1: -0.4 });
+    F.splash(z.x, z.y - 14, 0.9);
     z.phys = true;
     z.vx = 90;
     z.vy = -1150;
@@ -922,6 +1022,7 @@
     F.bleed(flat.x, FLOOR - 3, 34, { a0: -Math.PI + 0.1, a1: -0.1, s0: 120, s1: 300 });
     F.splatWall(flat.x, FLOOR - 26, 18, 44);
     F.pool(flat.x, 44);
+    F.splash(flat.x, FLOOR - 4, 1.4);
     yield 1.0;
     // peeled off the floor
     F.pose({ arm: 'down', armB: 'down', head: 'low', drop: 12 });
@@ -1004,6 +1105,7 @@
     F.gib('bone', cx, cy, { phys: true, vx: 70, vy: -380, vr: 18, bounce: 0.5 });
     F.gib('bone', cx, cy, { phys: true, vx: -50, vy: -300, vr: -16, bounce: 0.5 });
     F.splatWall(cx, cy - 20, 24, 50);
+    F.splash(cx, cy, 1.6);
     yield 1.0;
     // over the shoulders
     F.camTo(1.25, bx - 18, FLOOR - 74, 0.5);
@@ -1083,11 +1185,15 @@
     head.vr = 18;
     head.bounce = 0.72;
     head.walls = true;
+    let hits = 0;
     head.onBounce = (p) => {
       sfx.ping();
       F.splatWall(p.x, Math.min(p.y, FLOOR - 6), 3, 4);
+      // it ricochets off the edges of the screen, and leaves some of itself there
+      if (hits++ < 4) F.splash(p.x, p.y, 0.45);
     };
     F.fountain({ follow: body, dx: 0, dy: -11, dur: 1.9, rate: 90, a: -Math.PI / 2, spread: 0.25, s0: 220, s1: 380 });
+    F.splash(body.x, body.y - 11, 1.3);
     yield 1.5;
     // headless, the body goes for a little walk
     F.release(body);
@@ -1148,6 +1254,7 @@
     F.gib('bone', cx, cy, { phys: true, vx: 40, vy: -420, vr: 20, bounce: 0.5 });
     F.fountain({ x: cx, y: cy, dur: 1.4, rate: 110, a: -Math.PI / 2, spread: 0.9, s0: 160, s1: 360 });
     F.splatWall(cx, cy, 26, 50);
+    F.splash(cx, cy, 1.5);
     yield 0.55;
     F.ts = 1;
     F.pose({ arm: 'swing0', armB: 'swing1', head: 'n' });
@@ -1249,6 +1356,7 @@
       sfx.hit();
       F.shake(3, 0.08);
       F.bleed(z.x, z.y - 16, 7, { s0: 60, s1: 200 });
+      if (i % 3 === 2) F.splash(z.x, z.y - 16, 0.5);
       z.vy = Math.min(z.vy, -40);
       z.vx = (z.x < bx + 30 ? 30 : -30);
       yield 0.085;
@@ -1287,6 +1395,7 @@
     EC.fx.flash('#ffffff', 0.3);
     F.fountain({ x: bx + 30, y: FLOOR - 4, dur: 2.2, rate: 170, a: -Math.PI / 2, spread: 0.3, s0: 300, s1: 520 });
     F.splatWall(bx + 30, FLOOR - 80, 50, 120);
+    F.splash(bx + 30, FLOOR - 40, 2.2);
     F.L.smoke = 5;
     sfx.beeps(10, 0.3);
     cs.tween(F, { red: 0.42 }, 1.8, EC.ease.out);

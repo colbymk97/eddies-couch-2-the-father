@@ -35,7 +35,7 @@ Getting caught sends you back to the start of the room you're in.
 
 He doesn't just catch you. Each catch is worse than the last, in order, and after the tenth he picks at random. Nothing on screen names them; it just happens. The names below are for us. Press Enter or tap to skip to the end of one. The game-over card counts how many you've seen.
 
-Every time, Alex runs in, drops to her knees beside what's left of Zach, and cries. She's still crying when the card comes up.
+Every time, blood hits the TV screen where the hit lands and runs down the glass. Then Alex runs in, drops to her knees beside what's left of Zach, and cries. She's still crying when the card comes up.
 
 1. **Lawn Darted.** Head-first into the floorboards. The legs keep kicking. A sneaker comes off.
 2. **Reclined.** Folded into a neat cube with a lever. He pulls it; the footrest comes out.
