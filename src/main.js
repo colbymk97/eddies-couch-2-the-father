@@ -114,7 +114,10 @@
       pause();
       return;
     }
-    if (level.caught && level.caughtT > 1.4) showCaught();
+    if (level.caught && level.fatal) {
+      // let it play out; Enter or a tap skips to the end once it's had a moment
+      if (level.fatal.done || (input.pressed.confirm && level.caughtT > 1.2)) showCaught();
+    }
     else if (level.escaped) {
       // close in on the front door, then out onto the lawn
       mode = 'leaving';
@@ -148,9 +151,11 @@
   function showCaught() {
     mode = 'gameover';
     A.duckMusic(true);
+    const seen = EC.fatalities.seen();
     ui.panel.show({
       title: 'NOT GOOD ENOUGH.',
       red: true,
+      html: '<p class="tally">Deaths seen: ' + seen + ' of ' + EC.fatalities.count + '</p>',
       buttons: [
         { label: 'Try again', onClick: retry },
         { label: 'Restart the level', onClick: () => startTutorial() },

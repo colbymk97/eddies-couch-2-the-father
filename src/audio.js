@@ -142,6 +142,7 @@
     zach: { type: 'square', f: 540, vol: 0.045 },
     alex: { type: 'triangle', f: 780, vol: 0.09 },
     alexm: { type: 'triangle', f: 560, vol: 0.07, filter: ['lowpass', 650] },
+    zachm: { type: 'square', f: 420, vol: 0.05, filter: ['lowpass', 500] },
     dad: { type: 'square', f: 175, vol: 0.05, filter: ['lowpass', 1400] },
     beast: { type: 'sawtooth', f: 72, vol: 0.16, crush: true },
     gary: { type: 'triangle', f: 330, vol: 0.08 },
@@ -272,6 +273,67 @@
     select() {
       tone({ type: 'square', f: 660, f2: 990, dur: 0.09, vol: 0.06 });
     },
+    // ---- what it sounds like when he catches you
+    crunch() {
+      for (let i = 0; i < 3; i++) noise({ f: 2400 - i * 500, ftype: 'bandpass', q: 2, dur: 0.06, vol: 0.4, delay: i * 0.045 });
+      tone({ type: 'square', f: 120, f2: 60, dur: 0.12, vol: 0.12 });
+    },
+    splat() {
+      noise({ f: 900, f2: 120, dur: 0.28, vol: 0.55 });
+      tone({ type: 'sine', f: 180, f2: 50, dur: 0.22, vol: 0.35 });
+    },
+    squirt() {
+      noise({ f: 500, f2: 2600, ftype: 'bandpass', q: 3, dur: 0.35, vol: 0.25 });
+    },
+    pop() {
+      tone({ type: 'sine', f: 950, f2: 180, dur: 0.12, vol: 0.4, slide: 0.08 });
+      noise({ f: 5000, ftype: 'highpass', dur: 0.03, vol: 0.4 });
+    },
+    rip() {
+      noise({ f: 700, f2: 4200, ftype: 'bandpass', q: 1.5, dur: 0.35, vol: 0.35 });
+    },
+    crack() {
+      noise({ f: 6000, ftype: 'highpass', dur: 0.05, vol: 0.5 });
+      tone({ type: 'square', f: 1500, f2: 300, dur: 0.06, vol: 0.12 });
+    },
+    stretch() {
+      tone({ type: 'sawtooth', f: 90, f2: 340, dur: 0.9, vol: 0.08, vib: [20, 25], filter: ['lowpass', 900] });
+    },
+    inflate() {
+      tone({ type: 'sine', f: 300, f2: 2400, dur: 0.8, vol: 0.08, vib: [14, 30] });
+    },
+    kachunk() {
+      noise({ f: 1800, ftype: 'bandpass', q: 3, dur: 0.05, vol: 0.4 });
+      tone({ type: 'square', f: 140, f2: 70, dur: 0.12, vol: 0.18, delay: 0.06 });
+    },
+    boing() {
+      tone({ type: 'sine', f: 180, f2: 620, dur: 0.25, vol: 0.18, vib: [22, 40] });
+    },
+    whistle() {
+      tone({ type: 'sine', f: 2400, f2: 700, dur: 0.6, vol: 0.06 });
+    },
+    thwack() {
+      noise({ f: 1400, f2: 300, dur: 0.2, vol: 0.6 });
+      tone({ type: 'triangle', f: 330, f2: 90, dur: 0.3, vol: 0.25 });
+    },
+    wish() {
+      [1047, 1319, 1568, 2093, 2637].forEach((f, i) => tone({ type: 'triangle', f, dur: 0.22, vol: 0.08, delay: i * 0.07 }));
+    },
+    stamp() {
+      tone({ type: 'sine', f: 110, f2: 55, dur: 0.18, vol: 0.45 });
+      noise({ f: 700, dur: 0.1, vol: 0.35 });
+    },
+    organ() {
+      [261.6, 329.6, 392, 523.3].forEach((f) => {
+        tone({ type: 'square', f, dur: 2.4, vol: 0.035, attack: 0.15, hold: 1.8, filter: ['lowpass', 1800] });
+        tone({ type: 'sine', f: f / 2, dur: 2.4, vol: 0.06, attack: 0.15, hold: 1.8 });
+      });
+    },
+    cheer() {
+      noise({ f: 1500, ftype: 'bandpass', q: 0.6, dur: 2.2, vol: 0.25, attack: 0.3 });
+      for (let i = 0; i < 10; i++) tone({ type: 'triangle', f: 600 + Math.random() * 700, dur: 0.12, vol: 0.03, delay: 0.2 + Math.random() * 1.6 });
+    },
+
     // Alex, shouting a warning from where she's hiding
     shout() {
       [0, 0.06, 0.12].forEach((d, i) => tone({ type: 'triangle', f: 900 + i * 140, f2: 1100 + i * 140, dur: 0.07, vol: 0.11, delay: d }));

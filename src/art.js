@@ -838,7 +838,7 @@
     const legs = o.still ? { lf: [2, 0], lb: [-3, 0] } : BLEGS[(o.frame || 0) & 3];
     const arm = o.arm || ((o.frame || 0) & 2 ? 'swing1' : 'swing0');
     const armB = o.armB || (arm === 'swing0' ? 'swing1' : arm === 'swing1' ? 'swing0' : arm);
-    const key = 'beast-s-' + (o.still ? 's' : (o.frame || 0) & 3) + arm + armB + (o.head || 'n') + (o.drop | 0) + (o.socks ? 'x' : '');
+    const key = 'beast-s-' + (o.still ? 's' : (o.frame || 0) & 3) + arm + armB + (o.head || 'n') + (o.drop | 0) + (o.socks ? 'x' : '') + (o.legUp || '');
     return sprite(key, 78, 88, (g) => {
       const b = (legs.bob | 0) + (o.drop | 0);
       const foot = o.socks ? C.sock : C.slipper;
@@ -861,7 +861,17 @@
       R(g, 30, 21 + b, 18, 2, C.cardiL);
       R(g, 28, 64, 24, 4, C.belt);
       R(g, 47, 64, 3, 4, C.brass);
-      bLeg(g, 36 + legs.lf[0], 68, 20, legs.lf[1], C.khaki, foot);
+      if (o.legUp === 'kick') {
+        // a slipper, straight out
+        R(g, 38, 61, 17, 7, C.khaki);
+        R(g, 38, 61, 17, 1, C.khakiS);
+        R(g, 54, 57, 5, 12, foot);
+      } else if (o.legUp === 'stomp') {
+        // knee up, slipper raised
+        R(g, 37, 56, 13, 6, C.khaki);
+        R(g, 45, 56, 6, 14, C.khaki);
+        R(g, 43, 69, 11, 4, foot);
+      } else bLeg(g, 36 + legs.lf[0], 68, 20, legs.lf[1], C.khaki, foot);
       if (o.head === 'low') bHead(g, 54, 36 + b, false);
       else if (o.head === 'roar') bHead(g, 52, 4 + b, true);
       else bHead(g, 51, 9 + b, false);
@@ -872,6 +882,145 @@
   art.beastSideEye = { n: [26, -70], roar: [27, -75], low: [29, -43] };
   // Hand positions relative to feet anchor (facing right), for thrown objects.
   art.beastHand = { up: [-1, -84], fwd: [33, -55], hold: [27, -47], grab: [33, -52] };
+
+  // ================================================================ WHAT'S LEFT OF ZACH
+  const BLOOD = (C.blood = '#d6102b');
+  const BLOODD = (C.bloodD = '#8c0a1d');
+  function zTorso(g, x, y) {
+    R(g, x + 2, y, 8, 10, C.zKnit);
+    knit(g, x + 2, y, 8, 10);
+    R(g, x + 2, y, 2, 10, C.zKnitS);
+    R(g, x + 6, y, 3, 5, C.zKnitL);
+    R(g, x + 8, y, 2, 3, C.zTee);
+    R(g, x, y + 1, 2, 6, C.zKnitS);
+    R(g, x + 10, y + 1, 2, 6, C.zKnit);
+    R(g, x, y + 7, 2, 2, C.zSkinS);
+    R(g, x + 10, y + 7, 2, 2, C.zSkin);
+  }
+  function zLegs(g, x, y) {
+    R(g, x, y, 3, 8, C.jeansS);
+    R(g, x + 4, y, 3, 8, C.jeans);
+    R(g, x, y + 8, 4, 2, C.shoeS);
+    R(g, x + 4, y + 8, 4, 2, C.shoe);
+  }
+  function cube(g) {
+    R(g, 0, 0, 13, 13, C.zKnit);
+    knit(g, 0, 0, 13, 13);
+    R(g, 1, 0, 11, 2, C.zHair);
+    R(g, 2, 2, 7, 5, C.zSkin);
+    R(g, 3, 3, 1, 1, C.ink);
+    R(g, 7, 3, 1, 1, C.ink);
+    R(g, 4, 5, 3, 1, C.ink);
+    R(g, 1, 8, 6, 4, C.jeans);
+    R(g, 8, 10, 4, 2, C.shoe);
+    R(g, 9, 7, 3, 1, BLOOD);
+    R(g, 0, 12, 13, 1, BLOODD);
+  }
+  const GIBS = {
+    head: [12, 13, (g) => {
+      zHead(g, 1, 2, 'hurt');
+      R(g, 3, 12, 5, 1, BLOOD);
+    }],
+    headOk: [12, 13, (g) => zHead(g, 1, 2, 'worry')],
+    headBlink: [12, 13, (g) => {
+      zHead(g, 1, 2, 'down');
+      R(g, 3, 12, 5, 1, BLOOD);
+    }],
+    torso: [12, 12, (g) => {
+      zTorso(g, 0, 1);
+      R(g, 4, 0, 4, 1, BLOOD);
+      R(g, 2, 11, 8, 1, BLOOD);
+    }],
+    legs: [9, 11, (g) => {
+      zLegs(g, 0, 1);
+      R(g, 0, 0, 7, 1, BLOOD);
+    }],
+    leg: [5, 11, (g) => {
+      R(g, 1, 1, 3, 8, C.jeans);
+      R(g, 0, 9, 5, 2, C.shoe);
+      R(g, 1, 0, 3, 1, BLOOD);
+    }],
+    arm: [3, 9, (g) => {
+      R(g, 0, 1, 2, 6, C.zKnit);
+      R(g, 0, 7, 2, 2, C.zSkin);
+      R(g, 0, 0, 2, 1, BLOOD);
+    }],
+    shoe: [6, 3, (g) => {
+      R(g, 0, 0, 6, 3, C.shoe);
+      R(g, 0, 2, 6, 1, C.shoeS);
+      R(g, 4, 0, 2, 1, C.ink);
+    }],
+    bone: [7, 3, (g) => {
+      R(g, 1, 1, 5, 1, '#f4f1ea');
+      R(g, 0, 0, 2, 3, '#f4f1ea');
+      R(g, 5, 0, 2, 3, '#f4f1ea');
+    }],
+    top: [12, 24, (g) => {
+      zHead(g, 1, 3, 'hurt');
+      zTorso(g, 0, 13);
+      R(g, 2, 23, 8, 1, BLOOD);
+    }],
+    body: [12, 22, (g) => {
+      zTorso(g, 0, 1);
+      zLegs(g, 2, 11);
+      R(g, 4, 0, 4, 1, BLOOD);
+      R(g, 5, 0, 2, 1, BLOODD);
+    }],
+    flat: [32, 5, (g) => {
+      R(g, 0, 1, 3, 3, C.zHair);
+      R(g, 3, 0, 7, 5, C.zSkin);
+      R(g, 5, 1, 1, 1, C.ink);
+      R(g, 7, 1, 1, 1, C.ink);
+      R(g, 5, 3, 3, 1, C.ink);
+      R(g, 10, 0, 10, 5, C.zKnit);
+      knit(g, 10, 0, 10, 5);
+      R(g, 20, 0, 8, 5, C.jeans);
+      R(g, 20, 2, 8, 1, C.jeansS);
+      R(g, 28, 0, 4, 5, C.shoe);
+      R(g, 0, 4, 32, 1, BLOOD);
+      R(g, 2, 0, 1, 1, BLOOD);
+      R(g, 15, 0, 2, 1, BLOOD);
+    }],
+    cube: [15, 13, (g) => {
+      cube(g);
+      R(g, 13, 6, 1, 5, C.woodD);
+      R(g, 13, 5, 2, 2, C.wood);
+    }],
+    cubeFeet: [22, 13, (g) => {
+      cube(g);
+      R(g, 13, 7, 6, 2, C.jeans);
+      R(g, 18, 6, 4, 3, C.shoe);
+      R(g, 13, 10, 6, 2, C.jeansS);
+      R(g, 18, 9, 4, 3, C.shoe);
+      R(g, 13, 7, 1, 6, BLOOD);
+    }],
+    framed: [24, 34, (g) => {
+      R(g, 0, 0, 24, 32, C.brass);
+      R(g, 2, 2, 20, 28, '#e9dcc0');
+      R(g, 6, 3, 12, 2, C.zHair);
+      R(g, 5, 5, 14, 6, C.zSkin);
+      R(g, 8, 7, 1, 1, C.ink);
+      R(g, 15, 7, 1, 1, C.ink);
+      R(g, 10, 9, 4, 1, C.ink);
+      R(g, 4, 11, 16, 8, C.zKnit);
+      knit(g, 4, 11, 16, 8);
+      R(g, 2, 12, 2, 6, C.zKnit);
+      R(g, 20, 12, 2, 6, C.zKnit);
+      R(g, 6, 19, 12, 7, C.jeans);
+      R(g, 11, 19, 2, 7, C.jeansS);
+      R(g, 5, 26, 6, 2, C.shoe);
+      R(g, 13, 26, 6, 2, C.shoe);
+      R(g, 4, 10, 2, 3, BLOOD);
+      R(g, 17, 20, 2, 4, BLOOD);
+      R(g, 7, 28, 3, 2, BLOOD);
+      R(g, 8, 32, 1, 2, BLOOD);
+      R(g, 15, 32, 1, 1, BLOOD);
+    }],
+  };
+  art.gib = function (name) {
+    const d = GIBS[name];
+    return sprite('gib-' + name, d[0], d[1], d[2], true);
+  };
 
   // ================================================================ PROPS
   const PROPS = {

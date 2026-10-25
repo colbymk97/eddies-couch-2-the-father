@@ -317,6 +317,7 @@
       this.escaped = false;
       this.caught = false;
       this.caughtT = 0;
+      this.fatal = null;
       this.cam = EC.clamp(startX - 190, 0, LEVEL_W - EC.W);
       this.disks = DISKS.map((d, i) => Object.assign({ i, got: this.disksGot.has(i) }, d));
       this.keyGot = false;
@@ -410,10 +411,12 @@
         if (!this.caught && !this.escaped && b.state !== 'hidden' && EC.overlap(this.zbox(), this.bbox())) this.getCaught();
       }
       if (this.caught) this.caughtT += dt;
+      if (this.fatal) this.fatal.update(dt);
       // camera: a little look-ahead, and widen to keep him in frame when he's close
       let lead = z.face > 0 ? 190 : 290;
       if (z.face > 0 && b.state !== 'hidden' && z.x - b.x < 260) lead = EC.clamp(z.x - b.x + 40, 190, 270);
-      const target = EC.clamp(z.x - lead, 0, LEVEL_W - EC.W);
+      let target = EC.clamp(z.x - lead, 0, LEVEL_W - EC.W);
+      if (this.fatal) target = EC.clamp(this.fatal.cam.x - EC.W / 2, 0, LEVEL_W - EC.W);
       this.cam += (target - this.cam) * Math.min(1, dt * 5);
       this.cam = EC.clamp(this.cam, 0, LEVEL_W - EC.W);
     }
@@ -980,11 +983,13 @@
       b.state = 'grab';
       this.z.vx = this.z.vy = 0;
       this.alex = null;
-      sfx.roar(1.2);
+      this.projectiles = [];
       sfx.hit();
       EC.fx.shake(6, 0.6);
-      EC.fx.flash('#ff2b2b', 0.4);
+      EC.fx.flash('#ff2b2b', 0.3);
       ui.bubble.hide();
+      // and then he does something about it
+      this.fatal = EC.fatalities.create(this);
     }
 
     // Unlocking, then out the door.
@@ -1017,13 +1022,15 @@
       g.fillStyle = '#000';
       g.fillRect(0, 0, EC.W, EC.H);
       g.save();
-      // caught: the camera pushes in on his fist
-      if (this.caught) {
-        const k = EC.ease.out(Math.min(1, this.caughtT / 0.6));
-        const fx = b.x + 34 - cam;
-        const fy = FLOOR - 50;
-        g.translate(fx, fy);
-        g.scale(1 + 0.7 * k, 1 + 0.7 * k);
+      // caught: the camera does what the moment needs
+      const F = this.fatal;
+      if (F && F.cam.z !== 1) {
+        // the tighter the shot, the more the subject moves to the middle of the frame
+        const fx = F.cam.x - cam;
+        const fy = F.cam.y;
+        const k = EC.clamp((F.cam.z - 1) * 2, 0, 1);
+        g.translate(EC.lerp(fx, EC.W / 2, k), EC.lerp(fy, EC.H / 2, k));
+        g.scale(F.cam.z, F.cam.z);
         g.translate(-fx, -fy);
       }
       g.drawImage(bg, cam, 0, EC.W, EC.H, ox, oy, EC.W, EC.H);
@@ -1054,11 +1061,15 @@
       }
       this.drawOffscreenBeast(g, cam, t);
       this.drawAlex(g, t);
-      if (this.caught) {
-        g.globalAlpha = Math.min(0.55, this.caughtT * 0.5);
-        g.fillStyle = '#2a0003';
-        g.fillRect(0, 0, EC.W, EC.H);
-        g.globalAlpha = 1;
+      if (F) {
+        F.drawScreen(g);
+        if (F.done) {
+          F.dim = Math.min(0.45, (F.dim || 0) + 0.02);
+          g.globalAlpha = F.dim;
+          g.fillStyle = '#2a0003';
+          g.fillRect(0, 0, EC.W, EC.H);
+          g.globalAlpha = 1;
+        }
       }
       EC.fx.drawFlash(g);
       ui.bubble.place(z.x - cam, z.y - z.h - 10);
@@ -1068,6 +1079,7 @@
     drawWorld(g, cam, t) {
       const z = this.z;
       const b = this.b;
+      if (this.fatal) this.fatal.drawDecals(g);
       // the wall he came through, with the living room's light behind it
       if (this.wallBlown) {
         R(g, 2, 112, 44, FLOOR - 112, '#140d10');
@@ -1139,9 +1151,12 @@
       }
       // roomba
       if (this.roomba.active) art.put(g, art.prop('roomba'), this.roomba.x, FLOOR, { flip: this.roomba.dir < 0 });
-      // the beast, then zach
-      if (b.state !== 'hidden') this.drawBeast(g, t);
-      if (!this.escaped) this.drawZach(g, t);
+      // the beast, then zach (or what he's doing to zach)
+      if (this.fatal) this.fatal.draw(g, t);
+      else {
+        if (b.state !== 'hidden') this.drawBeast(g, t);
+        if (!this.escaped) this.drawZach(g, t);
+      }
       // thrown things
       for (const p of this.projectiles) art.put(g, art.prop(p.type), p.x, p.y, { rot: p.rot, alpha: p.dead ? Math.min(1, p.life * 2) : 1 });
       this.parts.draw(g, 0);
@@ -1177,6 +1192,7 @@
         warm.push({ x: DOOR_X + 12, y: FLOOR - 50, r: 110 });
       }
       hole(z.x - cam, z.y - 14, 60, 0.7);
+      if (this.fatal) hole(this.fatal.cam.x - cam, FLOOR - 70, 150, 0.85);
       if (b.state !== 'hidden') hole(b.x + 26 - cam, FLOOR - 70, 50, 0.5);
       L.globalCompositeOperation = 'source-over';
       g.save();
