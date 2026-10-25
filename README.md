@@ -1,4 +1,4 @@
-# Eddie's Couch 2: Meet the Father
+# Eddie's Couch 2: Alex's Father
 
 Zach promised his girlfriend's dad he'd show him *Eddie's Couch*. The game no longer exists. The dad has gotten over the game. He has not gotten over Zach.
 
@@ -25,7 +25,7 @@ Open `index.html` in a browser. There's no build step, no dependencies, and no s
 ## The house rules
 
 - **He won't step on a carpet in his slippers.** He stops to take them off, carries them across, and puts them back on at the far side. That's your window.
-- **Alex shouts warnings** from where she's hiding near the camera: a picture (jump, duck, go, the key's behind you), never words, so nothing covers the play area.
+- **Alex shouts warnings,** popping up from the bottom corner of the screen: a picture (jump, duck, go, the key's behind you), never words, so nothing covers the play area.
 - **He throws things:** a casserole, the TV remote, the gravy boat, the commemorative plates.
 - **The front door is locked.** The key is on the hall table, right next to the birthday gift. Taking the gift slows you down, and the ending notices whether you have it.
 

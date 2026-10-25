@@ -463,7 +463,13 @@
       R(g, 14, 12, 3, 3, C.aSkin);
     }
   }
+  // Popping up from the bottom of the screen: head, shoulders, a hand cupped to shout.
   function alexPeek(g) {
+    R(g, 1, 15, 14, 5, C.aJacket);
+    R(g, 1, 15, 3, 5, C.aJacketS);
+    R(g, 12, 15, 3, 5, C.aJacketL);
+    R(g, 6, 15, 4, 2, C.shirtW);
+    R(g, 5, 14, 6, 1, C.aCollar);
     aHead(g, 4, 4, 'worry');
     R(g, 12, 11, 3, 3, C.aSkin);
   }
@@ -484,7 +490,7 @@
     if (pose === 'kneel') return sprite('a-kneel', 24, 34, alexKneel);
     if (pose === 'cry') return sprite('a-cry' + (frame & 1), 24, 34, (g) => alexCry(g, frame & 1));
     if (pose === 'run') return sprite('a-run' + (frame & 3), 24, 34, (g) => alexBody(g, Object.assign({ face: 'scream' }, AWALK[frame & 3], { af: [3, -3] })));
-    if (pose === 'peek') return sprite('a-peek', 16, 16, alexPeek);
+    if (pose === 'peek') return sprite('a-peek', 16, 20, alexPeek);
     if (pose === 'walk') return sprite('a-walk' + (frame & 3), 24, 34, (g) => alexBody(g, AWALK[frame & 3]));
     return sprite('a-' + pose, 24, 34, (g) => alexBody(g, APOSE[pose] || APOSE.idle));
   };

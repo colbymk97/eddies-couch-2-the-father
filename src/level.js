@@ -94,9 +94,6 @@
     { x: 4531, y: 140, r: 84, warm: true },
   ];
   // Foreground silhouettes, nearer the camera than the action.
-  const FG = [];
-  for (let i = 0, x = 120; x < 6600; i++, x += 210 + ((i * 97) % 140)) FG.push({ x, kind: ['chair', 'plant', 'lamp', 'stool', 'plant', 'chair'][i % 6] });
-  const FG_PARALLAX = 1.35;
 
   // ================================================================ background
   let bg = null;
@@ -1058,7 +1055,6 @@
       this.drawLighting(g, cam, ox, oy);
       g.restore();
 
-      if (!this.caught) this.drawForeground(g, cam);
       // smoke alarm
       if (this.smoke > 0 && Math.floor(this.smoke * 3) % 2 === 0) {
         g.globalAlpha = EC.reducedMotion ? 0.07 : 0.14;
@@ -1226,33 +1222,6 @@
       if (b.state !== 'hidden') art.glow(g, b.x + 26 - cam + ox, FLOOR - 70 + oy, 46, 'rgba(255,40,40,0.18)');
     }
 
-    // Dark shapes close to the camera, sliding by faster than the room.
-    drawForeground(g, cam) {
-      g.fillStyle = '#0b070a';
-      const off = cam * FG_PARALLAX;
-      for (const f of FG) {
-        const x = Math.round(f.x - off);
-        if (x < -80 || x > EC.W + 20) continue;
-        const B = EC.H;
-        if (f.kind === 'chair') {
-          g.fillRect(x + 2, B - 20, 52, 20);
-          g.fillRect(x + 5, B - 23, 46, 3);
-          g.fillRect(x + 10, B - 25, 36, 2);
-        } else if (f.kind === 'plant') {
-          g.fillRect(x + 6, B - 12, 18, 12);
-          g.fillRect(x + 4, B - 14, 22, 2);
-          [[-6, -22, 12, 4], [12, -24, 14, 4], [4, -30, 6, 16], [16, -18, 10, 3], [-2, -17, 9, 3]].forEach(([dx, dy, w, h]) => g.fillRect(x + 6 + dx, B + dy, w, h));
-        } else if (f.kind === 'lamp') {
-          g.fillRect(x + 10, B - 10, 4, 10);
-          g.fillRect(x + 2, B - 4, 20, 4);
-        } else {
-          g.fillRect(x, B - 14, 30, 6);
-          g.fillRect(x + 3, B - 8, 4, 8);
-          g.fillRect(x + 23, B - 8, 4, 8);
-        }
-      }
-    }
-
     // When he's behind you and off the screen, his eyes are at the edge of it.
     drawOffscreenBeast(g, cam, t) {
       const b = this.b;
@@ -1276,11 +1245,9 @@
       if (!a) return;
       const k = Math.min(1, (a.dur - a.t) * 7, a.t * 7);
       const bx = EC.W - 30;
-      const by = EC.H - 4 + (1 - k) * 40;
+      // she rises from the bottom edge of the screen, shoulders and all
+      const by = EC.H + 4 + (1 - k) * 46;
       art.put(g, art.alex('peek'), bx, by, { sx: 2, sy: 2, flip: true });
-      g.fillStyle = '#0b070a';
-      g.fillRect(EC.W - 64, EC.H - 12, 64, 12);
-      g.fillRect(EC.W - 61, EC.H - 14, 58, 2);
       if (k < 0.6) return;
       // the shout
       const shake = a.dur - a.t < 0.5 ? Math.round(Math.sin(t * 60)) : 0;

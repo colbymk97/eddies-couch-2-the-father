@@ -529,7 +529,7 @@
     g.font = '700 17px ' + EC.FONT.ui;
     g.textAlign = 'center';
     g.fillStyle = '#e2b84a';
-    g.fillText('M E E T   T H E   F A T H E R', 240, y1 + 34);
+    g.fillText('A L E X’S   F A T H E R', 240, y1 + 34);
     g.restore();
     if (T.hatOn) {
       art.put(g, art.hat('zach'), T.hatX, T.hatY, { rot: T.hatRot, sx: 3, sy: 3 });
@@ -861,9 +861,7 @@
     yield* say(cs, 'zach', 'I didn’t know he was gonna —');
     S.dad.pose = 'point';
     yield* say(cs, 'dad', 'You are _unreliable._');
-    yield* say(cs, 'zach', 'That’s fair, but —');
     yield* say(cs, 'dad', 'You are a _liar._');
-    yield* say(cs, 'zach', 'I’d say more of a “miscommunicator” —');
     yield* say(cs, 'dad', 'A man who cannot produce a couch game cannot produce a _future._ You are not good enough for my daughter.');
     S.alex.pose = 'worry';
     yield* say(cs, 'alex', 'Daddy, please!');
@@ -1038,6 +1036,10 @@
     sfx.roar(1.4);
     EC.fx.shake(3, 1.2);
     yield* say(cs, 'beast', 'ZAAAACHARYYYY.', { loud: true });
+    // Alex, to Zach, at the top of her lungs
+    S.alex.pose = 'worry';
+    S.alex.face = -1;
+    yield* say(cs, 'alex', 'ZACH! RUN!!!', { loud: true });
 
     // Smash cut to black.
     sfx.smash();
