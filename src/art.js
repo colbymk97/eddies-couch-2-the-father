@@ -1373,20 +1373,22 @@
     R(g, 9, 5, 2, 1, C.eHairL);
     // stubble
     [[4, 11], [6, 12], [8, 11], [10, 12], [11, 11], [5, 12]].forEach(([x, y]) => R(g, x, y, 1, 1, '#c9a07a'));
+    // glasses
+    R(g, 3, 6, 5, 4, '#4a3428');
+    R(g, 8, 6, 5, 4, '#4a3428');
+    R(g, 4, 7, 3, 2, '#eaf3f8');
+    R(g, 9, 7, 3, 2, '#eaf3f8');
+    R(g, 7, 7, 2, 1, '#4a3428');
     if (face === 'back') {
       // looking over his shoulder at the back seat
-      R(g, 3, 7, 2, 1, C.ink);
-      R(g, 7, 7, 2, 1, C.ink);
-      R(g, 3, 8, 1, 1, C.ink);
-      R(g, 7, 8, 1, 1, C.ink);
-    } else {
-      // half-lidded, completely calm
-      R(g, 5, 7, 2, 1, C.ink);
-      R(g, 9, 7, 2, 1, C.ink);
       R(g, 6, 8, 1, 1, C.ink);
+      R(g, 11, 8, 1, 1, C.ink);
+    } else {
+      R(g, 5, 8, 1, 1, C.ink);
       R(g, 10, 8, 1, 1, C.ink);
     }
-    R(g, 6, 10, 4, 1, '#a8604a');
+    R(g, 7, 9, 2, 1, C.skinS);
+    R(g, 6, 11, 4, 1, '#a8604a');
     // birthday hat, at an angle
     R(g, 9, 0, 3, 2, '#6fbf5a');
     R(g, 10, -1, 1, 1, C.yellow);
